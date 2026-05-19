@@ -121,6 +121,7 @@ document.addEventListener('click', function (e) {
             { label: "MCP server", link: "/mcp/" },
             { label: "Migrate from manubot", link: "/migrating-from-manubot/" },
             { label: "Validate a manuscript", link: "/validate-manuscript/" },
+            { label: "Troubleshooting", link: "/troubleshooting/" },
           ],
         },
         {
