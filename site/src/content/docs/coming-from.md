@@ -37,51 +37,32 @@ below name what to learn for each starting point.
 
 ## Coming from Google Docs
 
-You're probably here because Google Docs got you 80% of the way to
-collaborative writing, but its citation story is the missing 20%.
-Pasting DOIs into the Zotero side panel, watching the bibliography
-get out of sync with what's actually cited in prose, the comment
-sidebar that doesn't survive an export — you know the friction.
+quartobot probably isn't your next step. The git + PR workflow
+that's load-bearing here works best when you already think in
+text-files-as-source — and for most Google Docs users (especially
+collaboratively-written multi-author papers), the lift to get a
+whole co-author group onto GitHub is too steep to be worth doing
+just to fix citations.
 
-**What you give up:**
+A better path: try **[Quarto itself](https://quarto.org/docs/get-started/)**
+first. It works on plain Markdown, renders to PDF and DOCX, has a
+live preview, and runs against a manual `references.bib`. You can
+adopt Quarto without git or GitHub; you just lose the per-commit
+collaboration story (which Google Docs solves differently).
 
-- Real-time collaborative cursors. quartobot's collaboration shape
-  is asynchronous (PRs and comments), not synchronous (cursors
-  meeting in a paragraph). For some teams that's a feature; for
-  others it's a real loss.
-- The auto-save reflex. You explicitly `git commit` to save a
-  version-controlled snapshot. Half-finished sentences in your local
-  copy don't propagate to collaborators until you push.
-- WYSIWYG editing. Markdown is plain text; the rendered version
-  comes from `quarto render`. You can run a live preview locally
-  (`quarto preview`) for a similar feel, but the source itself is
-  not what the rendered output looks like.
+Once you've spent a few months writing manuscripts in Quarto and the
+git workflow feels natural — typically because you've collaborated on
+a Quarto project with someone who already uses it — come back here.
+By that point you'll be in the "Coming from Quarto with a manual
+references.bib" persona below, and quartobot is a one-line addition.
 
-**What you gain:**
-
-- The document **is** the source code. Diffs make sense. Reviewers
-  can suggest specific changes via PR — "rewrite this paragraph"
-  becomes a diff, not a comment-thread argument.
-- Citations live in your prose by DOI/PMID/arXiv, not in a binary
-  database synced via a side panel. Paste `@doi:10.1038/...`, and
-  the bibliography entry appears on the next render. No "is my
-  Zotero up to date?" anxiety.
-- Reproducible builds. The PDF a collaborator generates from your
-  source is byte-equivalent to the one CI generates. No "the
-  formatting broke when I opened it on my laptop" debugging.
-
-**Pre-quartobot lift:** if you're coming straight from Google Docs
-with no git or Markdown experience, budget a day to learn both.
-Markdown is genuinely small (90% of what you need is in the first
-hour of any tutorial); git is the bigger learning curve, but the
-subset you need for quartobot is `clone`, `add`, `commit`, `push`,
-`pull`, plus the GitHub web UI for PRs. You don't need to learn
-rebase, cherry-pick, or any of the harder operations.
-
-A reasonable on-ramp: start with [GitHub Desktop](https://desktop.github.com/)
-or [GitKraken](https://www.gitkraken.com/) rather than the command
-line for the first week. Once the mental model is in place, the
-terminal feels lighter, not heavier.
+If you're confident you want to skip the Quarto-first step anyway:
+the prerequisites at the top of this page name what to learn, and
+[GitHub Desktop](https://desktop.github.com/) plus
+[GitHub's Hello World](https://docs.github.com/en/get-started/quickstart/hello-world)
+are the gentlest on-ramps. Budget at least a few weeks for the
+collaboration workflow to feel natural — most of that is teaching
+co-authors, not learning git yourself.
 
 ## Coming from manubot
 
@@ -101,26 +82,48 @@ under the hood. Your prose is mostly portable.
 
 **What's different:**
 
-- The rendering layer is Quarto, not the manubot template. You get
-  Quarto's richer Markdown extensions, Jupyter / R Markdown
-  integration, multi-format output (HTML / PDF / DOCX from one
-  source), the visual editor in RStudio if you want it.
+- The rendering layer is Quarto, not the manubot Rootstock template.
+  This means: no `metadata.yaml` for authors and affiliations —
+  Quarto puts those in `_quarto.yml`'s frontmatter, with a different
+  shape. The `content/` directory becomes plain `.qmd` files in your
+  project. The manubot-specific HTML niceties (contribution
+  statements, ORCID badges, social-card metadata) need to be
+  re-implemented as Quarto includes or filters. The
+  [Migrate from manubot](./migrating-from-manubot/) guide covers the
+  field-by-field mapping.
 - Citation resolution happens via a Quarto pre-render hook, not via
-  the `pandoc-manubot-cite` filter. The end result is the same
-  rendered bibliography, but the seam is structurally cleaner — no
-  pandoc version constraints, no PATH-at-render-time concerns. See
-  [Differences from manubot](./differences-from-manubot/) for the
-  full mechanical comparison.
-- Per-commit `/v/<sha>/` permalinks are opt-in via `quartobot use
-  github-ci --with-versioned-snapshots`, not the default. If you
-  want the manubot pattern in full, that flag preserves it.
-- Caching is the default. `references.json` IS the cache; commit it
-  and CI never hits Crossref. (manubot's default is no cache — each
-  render re-resolves.)
+  the `pandoc-manubot-cite` filter. The seam is structurally cleaner
+  — no pandoc version constraints, no PATH-at-render-time concerns.
+  See [Differences from manubot](./differences-from-manubot/) for
+  the full mechanical comparison.
+- **Caching is the default.** `references.json` *is* the cache; commit
+  it and CI never hits Crossref. manubot's default is no cache, so
+  if you've been fighting Crossref rate limits in CI, this fixes
+  that without configuration.
+- Per-commit `/v/<sha>/` permalinks are opt-in via
+  `quartobot use github-ci --with-versioned-snapshots`, not the
+  default. The reason: most new adopters don't need the immutable
+  permalink layer on day one, and shipping it as the default raises
+  the onboarding floor (snapshot retention to configure, banner
+  template to understand). The full manubot pattern is one flag away
+  — if you're porting an existing manubot project, you'll almost
+  certainly want it.
 
-**Migration path:** point Quarto at your existing manuscript prose,
-`quartobot init`, `quartobot use github-ci`, push. Hand-curated
-`.bib` entries continue to work alongside the auto-resolved ones.
+**Migration path:** point Quarto at your existing manuscript prose
+(rename `content/*.md` to `.qmd`), `quartobot init`,
+`quartobot use github-ci --with-versioned-snapshots` (if you want
+the full pattern), push. Hand-curated `.bib` entries continue to
+work alongside the auto-resolved ones; see the
+**Bibliography collisions** subsection below for the
+collision-resolution flow.
+
+```bash
+# from a manubot project root:
+mv content/* ./   # or similar restructuring
+uv tool install quartobot
+quartobot init
+quartobot use github-ci --with-versioned-snapshots
+```
 
 ## Coming from Quarto with a manual references.bib
 
@@ -132,7 +135,11 @@ re-export when the metadata gets fixed upstream.
 **What you keep:** everything about your current Quarto setup. Project
 structure, formats, themes, the visual editor, your render flow.
 
-**What changes:** one line in `_quarto.yml`:
+**What changes:** install the CLI, add one line to `_quarto.yml`:
+
+```bash
+uv tool install quartobot
+```
 
 ```yaml
 project:
@@ -148,6 +155,36 @@ appears in the bibliography on the next render. Hand-curated entries
 in `references.bib` keep working unchanged for the things the
 resolver can't reach (preprints not on Crossref, edge cases, custom
 citations).
+
+**Caching:** `references.json` is both the output and the cache. First
+render hits the network for each new key; subsequent renders are
+network-free for keys already in the file. Commit `references.json`
+to git and CI never hits Crossref / PubMed / arXiv either, which
+makes builds reproducible and immune to upstream registrar outages.
+
+**Bibliography collisions.** If the same key (`doi:10.1038/abc`)
+appears in both `references.bib` (hand-curated) and `references.json`
+(auto-resolved), pandoc-citeproc's behavior is its default later-wins
+— which is the sort of silent precedence that produces a wrong fact
+in your rendered output without obvious warning. The
+[`quartobot reconcile`](https://github.com/quartobot/quartobot/issues/122)
+command is designed to force an explicit choice (accept-bib,
+accept-json, or interactive picker per collision) and is the planned
+fix for this. Until that ships, the practical workaround is: if you
+hand-curate an entry for a key the resolver is also handling, pick
+one source and remove the other. `quartobot scan` will list every
+key in your project so you can audit.
+
+**Relationship to Quarto Manuscripts.** Quarto 1.4 ships a first-party
+`project: type: manuscript` project type — different from quartobot.
+That feature gives you the manuscript-shaped project layout
+(JATS export, notebook embedding, etc.); quartobot adds citation
+resolution on top. The two compose: declare `type: manuscript` in
+`_quarto.yml` *and* add quartobot's pre-render hook. There's an
+[open design question](https://github.com/quartobot/quartobot/issues/3)
+on whether to extend or fork the first-party template for new-project
+scaffolds; for adoption-into-an-existing-Quarto-project, the two
+layers don't interfere.
 
 **Pre-quartobot lift:** essentially zero. You're already comfortable
 with Quarto; this is a one-line addition.
@@ -223,13 +260,21 @@ A few honest signals that another tool may fit better:
 - You write predominantly without citations (a novel, a poem, a
   newsletter). quartobot's primary value is citation resolution; if
   you don't cite, you're paying setup cost for nothing.
-- Your collaborators won't use git, and you don't have authority to
-  change that. The PR-review-of-prose model is load-bearing for the
-  collaboration value; without it, you're just writing in Markdown
-  alone, which Quarto + a personal bib file already does.
+- You rely on custom BibTeX fields the source registrars don't
+  return — annotations, non-standard entry types, contribution
+  statements baked into the bib entry. quartobot's auto-resolved
+  entries carry only what Crossref / PubMed / arXiv expose, so a
+  reliance on bespoke fields means staying on hand-curated `.bib`
+  for those entries. (The two can coexist — see the bib-collision
+  note in "Coming from Quarto" above — but if every entry is
+  custom-curated, the resolver adds little.)
 - You need real-time synchronous editing more than you need
   reproducibility. Google Docs / Notion / Quip / Word-Online win on
   that axis and always will.
+- You're writing alone, will never publish to gh-pages, and don't
+  want a GitHub repo. The minimum setup still costs you 30 minutes;
+  a local Quarto + manual `.bib` workflow is meaningfully simpler if
+  you'll never use the CI half.
 
 ## See also
 
