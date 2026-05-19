@@ -21,8 +21,6 @@ csl: https://raw.githubusercontent.com/citation-style-language/styles/master/nat
 
 format:
   html:
-    include-before-body:
-      - _version-banner.html
     toc: true
     toc-depth: 3
     number-sections: true

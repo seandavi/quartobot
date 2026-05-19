@@ -1,0 +1,368 @@
+name: Render quartobot manuscript (lean — Option B default)
+
+# The lean default render pipeline. Leans on Quarto's own
+# `quarto-actions/{setup,render}` and `peaceiris/actions-gh-pages` for
+# deployment, adds quartobot's setup so the citation pre-render hook
+# works, and uses `quartobot versions update` to keep `/versions/`
+# in sync. No per-commit `/v/<sha>/` permalinks, no HTML banner, no
+# snapshot pruning — the surface area is intentionally narrow.
+#
+# Use this for new projects. For the manubot-style per-commit
+# permalinks + version banner + retention policy (the v0.1 default),
+# point at `render-reusable.yml` instead and follow the migration
+# notes in docs/.
+#
+# Consumer workflows shrink to:
+#
+#   name: Render
+#   on:
+#     push: { branches: [main] }
+#     pull_request: { branches: [main] }
+#     workflow_dispatch:
+#   jobs:
+#     render:
+#       uses: quartobot/quartobot/.github/workflows/render-reusable-lean.yml@main
+#       permissions:
+#         contents: write
+#         pull-requests: write
+#
+# Pin to a tag (`@v0.2`) in production once one ships.
+
+on:
+  workflow_call:
+    inputs:
+      formats:
+        description: "Comma-separated render formats."
+        type: string
+        required: false
+        default: "html,pdf,docx"
+      project-type:
+        description: |
+          Quarto project type. "manuscript" (default) stages
+          per-format files from the project root; "book" stages the
+          whole `_book/` site recursively.
+        type: string
+        required: false
+        default: "manuscript"
+      manuscript-name:
+        description: |
+          Base name for the PDF/DOCX alias under `/` and `/pr/<n>/`
+          (the PR sticky comment links to it). Defaults to
+          "manuscript". Ignored when `project-type: book`.
+        type: string
+        required: false
+        default: "manuscript"
+      book-output-dir:
+        description: "Output directory Quarto books write to."
+        type: string
+        required: false
+        default: "_book"
+      python-version:
+        description: "Python version for the quartobot install."
+        type: string
+        required: false
+        default: "3.12"
+      quartobot-spec:
+        description: |
+          Pip spec for the quartobot CLI. Defaults to the published
+          PyPI package; pin a tag, point at a fork, or use a workspace
+          path for in-tree testing.
+        type: string
+        required: false
+        default: "quartobot"
+      quarto-version:
+        description: |
+          Quarto version. `release` installs the latest stable;
+          specific versions like "1.5.57" pin for reproducible CI.
+        type: string
+        required: false
+        default: "release"
+      tinytex:
+        description: "Install TinyTeX (required for PDF render)."
+        type: string
+        required: false
+        default: "true"
+      project:
+        description: |
+          Directory holding `_quarto.yml`. Defaults to the repo root.
+        type: string
+        required: false
+        default: "."
+      project-title:
+        description: |
+          Title for the `/versions/` page. Defaults to the repository
+          name; pass an explicit value for a friendlier display.
+        type: string
+        required: false
+        default: ""
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: gh-pages-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        # Fetch all history + tags so the versions step can name tags
+        # and look up commit subjects for the entries on disk.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up quartobot toolchain
+        uses: quartobot/quartobot/actions/setup-quartobot@main
+        with:
+          python-version: ${{ inputs.python-version }}
+          quartobot-spec: ${{ inputs.quartobot-spec }}
+          quarto-version: ${{ inputs.quarto-version }}
+          tinytex: ${{ inputs.tinytex }}
+          project: ${{ inputs.project }}
+
+      - name: Render manuscript
+        # The pre-render hook in `_quarto.yml` invokes
+        # `quartobot resolve` here; `setup-quartobot` above ensures
+        # it's on PATH.
+        uses: quartobot/quartobot/actions/render-manuscript@main
+        with:
+          project: ${{ inputs.project }}
+          formats: ${{ inputs.formats }}
+
+      - name: Stage outputs
+        # Lean staging: latest at `/`, PR preview at `/pr/<n>/`. No
+        # `/v/<sha>/`. The opt-in versioned variant in
+        # `render-reusable.yml` does the per-commit dirs.
+        env:
+          PROJECT_TYPE: ${{ inputs.project-type }}
+          OUTPUT: "index"
+          MANUSCRIPT: ${{ inputs.manuscript-name }}
+          BOOK_OUTPUT_DIR: ${{ inputs.book-output-dir }}
+          FORMATS: ${{ inputs.formats }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        working-directory: ${{ inputs.project }}
+        run: |
+          set -euxo pipefail
+
+          declare -A EXT=(
+            [html]=html
+            [pdf]=pdf
+            [docx]=docx
+            [epub]=epub
+            [jats]=xml
+            [revealjs]=html
+            [gfm]=md
+          )
+
+          stage_manuscript() {
+            local dest="$1"
+            mkdir -p "$dest"
+            IFS=',' read -ra REQUESTED <<< "$FORMATS"
+            for raw in "${REQUESTED[@]}"; do
+              fmt=$(echo "$raw" | xargs)
+              [ -z "$fmt" ] && continue
+              ext="${EXT[$fmt]:-$fmt}"
+              src="${OUTPUT}.${ext}"
+              if [ ! -f "$src" ]; then
+                echo "::warning::format '$fmt' requested but '$src' not found; skipping"
+                continue
+              fi
+              cp "$src" "$dest/$src"
+              if [ "$fmt" != "html" ] && [ "$fmt" != "revealjs" ]; then
+                cp "$src" "$dest/${MANUSCRIPT}.${ext}"
+              fi
+            done
+          }
+
+          stage_book() {
+            local dest="$1"
+            mkdir -p "$dest"
+            if [ ! -d "$BOOK_OUTPUT_DIR" ]; then
+              echo "::error::book output directory '$BOOK_OUTPUT_DIR' not found"
+              exit 1
+            fi
+            cp -R "${BOOK_OUTPUT_DIR}/." "$dest/"
+          }
+
+          stage_dir() {
+            case "$PROJECT_TYPE" in
+              manuscript) stage_manuscript "$1" ;;
+              book)       stage_book "$1" ;;
+              *)
+                echo "::error::unknown project-type '$PROJECT_TYPE'"
+                exit 1
+                ;;
+            esac
+          }
+
+          # Latest at root on push to main.
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            stage_dir "public"
+          fi
+
+          # PR preview at /pr/<n>/.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            stage_dir "public/pr/${PR_NUMBER}"
+          fi
+
+          echo "--- staged ---"
+          find public -maxdepth 3 -type f 2>/dev/null | sort | head -50 || true
+
+      - name: Move staged public/ up to repo root for deploy
+        if: inputs.project != '.'
+        run: |
+          if [ -d "${{ inputs.project }}/public" ]; then
+            mv "${{ inputs.project }}/public" public
+          fi
+
+      # ----------------------------------------------------------------
+      # /versions/ page generation.
+      #
+      # Runs against an in-memory gh-pages worktree so the versions
+      # page lists everything that exists on the published branch plus
+      # what's about to be added by this deploy. The page is overlaid
+      # on top of the new staging dir so the deploy step picks it up.
+      #
+      # Skipped entirely on PRs from forks (can't push to gh-pages
+      # anyway).
+      # ----------------------------------------------------------------
+      - name: Check whether gh-pages branch exists
+        id: branch
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch gh-pages into a worktree for the versions update
+        if: steps.branch.outputs.exists == 'true'
+        run: |
+          set -euxo pipefail
+          git fetch --depth=1 origin gh-pages:gh-pages
+          rm -rf "${RUNNER_TEMP}/gh-pages-versions"
+          git worktree add "${RUNNER_TEMP}/gh-pages-versions" gh-pages
+
+      - name: Collect git facts for the versions page
+        if: steps.branch.outputs.exists == 'true'
+        id: facts
+        env:
+          DEFAULT_LATEST: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euxo pipefail
+          # Latest sha: the one this run is publishing.
+          echo "latest-sha=${DEFAULT_LATEST}" >> "$GITHUB_OUTPUT"
+
+          # Tag SHAs as a comma-separated list for --tag-shas.
+          TAG_SHAS=$(git for-each-ref --format='%(objectname)' refs/tags/ | paste -sd, -)
+          echo "tag-shas=${TAG_SHAS}" >> "$GITHUB_OUTPUT"
+
+          # Commit metadata for entries already on gh-pages — title
+          # and ISO commit date. Sha-info shape: full-sha\ttitle\tdate.
+          # 200 commits is generous; gh-pages snapshots can't outpace
+          # that without retention pruning, which lean mode doesn't do.
+          git log --format='%H%x09%s%x09%aI' --max-count=200 > "${RUNNER_TEMP}/sha-info.tsv"
+          echo "sha-info-path=${RUNNER_TEMP}/sha-info.tsv" >> "$GITHUB_OUTPUT"
+
+      - name: List open PRs for the versions page
+        if: steps.branch.outputs.exists == 'true'
+        id: prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          gh pr list --state open --limit 100 \
+            --json number,title,headRefName,headRefOid,updatedAt \
+            > "${RUNNER_TEMP}/open-prs.json"
+          echo "path=${RUNNER_TEMP}/open-prs.json" >> "$GITHUB_OUTPUT"
+
+      - name: Update /versions/ page
+        if: steps.branch.outputs.exists == 'true'
+        env:
+          PROJECT_TITLE_INPUT: ${{ inputs.project-title }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          set -euxo pipefail
+          TITLE="${PROJECT_TITLE_INPUT:-$REPO_NAME}"
+
+          quartobot versions update \
+            --gh-pages-dir "${RUNNER_TEMP}/gh-pages-versions" \
+            --project . \
+            --latest-sha "${{ steps.facts.outputs.latest-sha }}" \
+            --tag-shas "${{ steps.facts.outputs.tag-shas }}" \
+            --sha-info "${{ steps.facts.outputs.sha-info-path }}" \
+            --open-prs "${{ steps.prs.outputs.path }}" \
+            --project-title "$TITLE"
+
+          # Carry the generated versions/ directory into the staging
+          # area so the deploy step picks it up alongside the rendered
+          # outputs.
+          mkdir -p public/versions
+          cp -R "${RUNNER_TEMP}/gh-pages-versions/versions/." public/versions/
+
+      - name: Clean up versions worktree
+        if: always() && steps.branch.outputs.exists == 'true'
+        run: |
+          git worktree remove --force "${RUNNER_TEMP}/gh-pages-versions" 2>/dev/null || true
+          rm -rf "${RUNNER_TEMP}/gh-pages-versions"
+
+      - name: Deploy to gh-pages
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./public
+          keep_files: true
+          commit_message: |
+            Render ${{ github.event_name }} ${{ github.sha }}
+            ${{ github.event.head_commit.message || github.event.pull_request.title }}
+          user_name: "github-actions[bot]"
+          user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Build sticky comment body
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MANUSCRIPT: ${{ inputs.manuscript-name }}
+          FORMATS: ${{ inputs.formats }}
+          PROJECT_TYPE: ${{ inputs.project-type }}
+        run: |
+          BASE="https://${OWNER}.github.io/${REPO_NAME}"
+          PR_URL="${BASE}/pr/${PR_NUMBER}/"
+          LATEST_URL="${BASE}/"
+          VERSIONS_URL="${BASE}/versions/"
+
+          include_pdf=false
+          if [ "$PROJECT_TYPE" = "manuscript" ] && echo ",${FORMATS}," | grep -q ',pdf,'; then
+            include_pdf=true
+          fi
+
+          {
+            echo "### Rendered preview"
+            echo ""
+            if $include_pdf; then
+              echo "| Version | HTML | PDF |"
+              echo "|---|---|---|"
+              echo "| This PR (\`${HEAD_SHA:0:7}\`) | [\`pr/${PR_NUMBER}/\`](${PR_URL}) | [PDF](${PR_URL}${MANUSCRIPT}.pdf) |"
+              echo "| Latest main | [latest](${LATEST_URL}) | [PDF](${LATEST_URL}${MANUSCRIPT}.pdf) |"
+            else
+              echo "| Version | Link |"
+              echo "|---|---|"
+              echo "| This PR (\`${HEAD_SHA:0:7}\`) | [\`pr/${PR_NUMBER}/\`](${PR_URL}) |"
+              echo "| Latest main | [latest](${LATEST_URL}) |"
+            fi
+            echo ""
+            echo "All versions: [${VERSIONS_URL}](${VERSIONS_URL})"
+          } > "${RUNNER_TEMP}/pr-comment.md"
+
+      - name: Comment on PR with preview links
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: manuscript-preview
+          path: ${{ runner.temp }}/pr-comment.md
