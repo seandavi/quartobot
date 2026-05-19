@@ -82,6 +82,35 @@ document.addEventListener('click', function (e) {
     return;
   }
 }, true);
+
+// Append a "Report an issue" link next to Starlight's "Edit page"
+// link in the per-page footer. Pre-fills the issue title with the
+// page title and the body with the page URL so the reporter doesn't
+// have to type those.
+document.addEventListener('DOMContentLoaded', function () {
+  var editLink = document.querySelector(
+    'footer .meta a[href*="/edit/main/"]'
+  );
+  if (!editLink) return;
+  var pageTitle = (document.title || '').replace(/ \\| quartobot.*$/, '');
+  var pageUrl = window.location.href.split('#')[0];
+  var issueUrl =
+    'https://github.com/quartobot/quartobot/issues/new'
+    + '?title=' + encodeURIComponent('Docs: ' + pageTitle)
+    + '&body=' + encodeURIComponent('Page: ' + pageUrl + String.fromCharCode(10) + String.fromCharCode(10));
+  var report = document.createElement('a');
+  report.href = issueUrl;
+  report.className = editLink.className;
+  report.target = '_blank';
+  report.rel = 'noopener';
+  // Tiny inline SVG so the link visually matches "Edit page" style.
+  report.innerHTML =
+    '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"'
+    + ' fill="currentColor" style="--sl-icon-size: 1.2em; margin-right: 0.3em;">'
+    + '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2'
+    + ' 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>Report an issue';
+  editLink.parentNode.appendChild(report);
+});
 `.trim(),
         },
       ],
