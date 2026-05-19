@@ -3,7 +3,7 @@
 Composite action: renders a Quarto project to one or more formats.
 
 ```yaml
-- uses: quartobot/quartobot/actions/render-manuscript@v0.1
+- uses: seandavi/quartobot/actions/render-manuscript@v0.1
   with:
     project: "."                # path to the Quarto project dir
     formats: "html,pdf,docx"    # comma-separated
@@ -30,8 +30,8 @@ in the step before:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: quartobot/quartobot/actions/setup-quartobot@v0.1
-- uses: quartobot/quartobot/actions/render-manuscript@v0.1
+- uses: seandavi/quartobot/actions/setup-quartobot@v0.1
+- uses: seandavi/quartobot/actions/render-manuscript@v0.1
 ```
 
 ## Formats

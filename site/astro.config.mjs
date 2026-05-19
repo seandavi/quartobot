@@ -4,7 +4,7 @@ import starlight from "@astrojs/starlight";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://quartobot.github.io",
+  site: "https://seandavi.github.io",
   base: "/quartobot",
   integrations: [
     starlight({
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var pageTitle = (document.title || '').replace(/ \\| quartobot.*$/, '');
   var pageUrl = window.location.href.split('#')[0];
   var issueUrl =
-    'https://github.com/quartobot/quartobot/issues/new'
+    'https://github.com/seandavi/quartobot/issues/new'
     + '?title=' + encodeURIComponent('Docs: ' + pageTitle)
     + '&body=' + encodeURIComponent('Page: ' + pageUrl + String.fromCharCode(10) + String.fromCharCode(10));
   var report = document.createElement('a');
@@ -118,11 +118,11 @@ document.addEventListener('DOMContentLoaded', function () {
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/quartobot/quartobot",
+          href: "https://github.com/seandavi/quartobot",
         },
       ],
       editLink: {
-        baseUrl: "https://github.com/quartobot/quartobot/edit/main/site/",
+        baseUrl: "https://github.com/seandavi/quartobot/edit/main/site/",
       },
       // Sidebar: Install is the first thing a new user needs, so it
       // sits at the top alongside Home. Everything below is grouped by

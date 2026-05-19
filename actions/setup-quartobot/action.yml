@@ -16,7 +16,7 @@ inputs:
       git ref; override with a tag, a fork, or a workspace path for
       testing against a specific build.
     required: false
-    default: "git+https://github.com/quartobot/quartobot"
+    default: "git+https://github.com/seandavi/quartobot"
   quarto-version:
     description: |
       Quarto version. `release` is the latest stable; `pre-release` is

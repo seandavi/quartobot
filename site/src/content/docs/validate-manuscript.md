@@ -158,7 +158,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv tool install git+https://github.com/quartobot/quartobot
+      - run: uv tool install git+https://github.com/seandavi/quartobot
       - run: quartobot validate .
 ```
 

@@ -6,7 +6,7 @@
 #
 # To customize the pipeline, override inputs below (`formats`,
 # `manuscript-name`, etc.). See:
-#   https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable-lean.yml
+#   https://github.com/seandavi/quartobot/blob/main/.github/workflows/render-reusable-lean.yml
 # for the full list of inputs.
 #
 # To opt into the manubot-style per-commit permalink pipeline (with
@@ -25,7 +25,7 @@ on:
 
 jobs:
   render:
-    uses: quartobot/quartobot/.github/workflows/render-reusable-lean.yml@main
+    uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main
     permissions:
       contents: write
       pull-requests: write

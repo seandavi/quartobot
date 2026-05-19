@@ -51,7 +51,7 @@ use that filter. Instead, `quartobot resolve` runs as a Quarto
 pre-render hook before pandoc starts and writes CSL JSON to
 `references.json`; pandoc citeproc reads that file directly with no
 custom filter in the chain. The rationale is in
-[`docs/citation-pipeline.md`](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md) —
+[`docs/citation-pipeline.md`](https://github.com/seandavi/quartobot/blob/main/docs/citation-pipeline.md) —
 two material UX gotchas in the filter shape (manubot's pandoc 3.x
 version check, the resolver's PATH requirement at render time)
 become structurally unreachable under the pre-render seam, and the
@@ -155,6 +155,6 @@ manubot for the rootstock conventions specifically, see the
 ## See also
 
 - [Migrating from manubot](../migrating-from-manubot/) — concrete steps
-- [`docs/citation-pipeline.md`](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md) — why the pre-render hook, not a filter
+- [`docs/citation-pipeline.md`](https://github.com/seandavi/quartobot/blob/main/docs/citation-pipeline.md) — why the pre-render hook, not a filter
 - [manubot](https://github.com/manubot/manubot) — the upstream
 - [Himmelstein et al. 2019](https://doi.org/10.1371/journal.pcbi.1007128) — the foundational paper

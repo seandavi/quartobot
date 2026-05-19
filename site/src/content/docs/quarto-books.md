@@ -68,7 +68,7 @@ If you override `project.output-dir:` to something other than
 `_book/`, also pass the new path to the reusable workflow's
 `book-output-dir` input — the CI side doesn't auto-detect.
 Alternatively, detach the workflow and run your own. The
-[`render.yml`](https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml)
+[`render.yml`](https://github.com/seandavi/quartobot/blob/main/.github/workflows/render-reusable.yml)
 documents the full input list.
 
 ## Version banner per chapter
@@ -189,5 +189,5 @@ reference list from the shared `references.json`.
   single-document shape.
 - [CLI reference: `resolve`](../cli/#quartobot-resolve) — the full
   flag surface for the pre-render hook.
-- [Worked book example](https://github.com/quartobot/quartobot/tree/main/examples/book-minimal) —
+- [Worked book example](https://github.com/seandavi/quartobot/tree/main/examples/book-minimal) —
   minimal book exercising the pre-render hook in the main repo.

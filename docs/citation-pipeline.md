@@ -18,7 +18,7 @@ A user walking through the filter-era v0.1 minimal example had to:
 
 1. Apply a `sed` patch to `manubot/pandoc/util.py` to bypass a hardcoded
    pandoc version check that broke on the pandoc 3.x bundled with
-   Quarto ≥ 1.4 ([#32](https://github.com/quartobot/quartobot/issues/32)).
+   Quarto ≥ 1.4 ([#32](https://github.com/seandavi/quartobot/issues/32)).
 2. Either install manubot at the system Python, or invoke
    `uv run quarto render` instead of bare `quarto render`, because the
    Lua filter shells out to `pandoc-manubot-cite` and that binary
@@ -104,7 +104,7 @@ architecture — unreachable, not merely avoided.
 
 The `_extensions/seandavi/quarto-manubot-cite/` tree is gone. There
 is nothing for `quarto add` to install. The on-ramp is
-`uv tool install git+https://github.com/quartobot/quartobot`, and
+`uv tool install git+https://github.com/seandavi/quartobot`, and
 `quartobot init` writes the pre-render line into `_quarto.yml`.
 
 ## Citation plugin architecture
@@ -256,7 +256,7 @@ adoption and extension, not displacement:
 | PATH for `pandoc-manubot-cite` | Required at render time | Irrelevant |
 | `_extensions/seandavi/quarto-manubot-cite/` | Lua filter bridge | Deleted |
 
-[#32]: https://github.com/quartobot/quartobot/issues/32
+[#32]: https://github.com/seandavi/quartobot/issues/32
 
 ## Open questions
 

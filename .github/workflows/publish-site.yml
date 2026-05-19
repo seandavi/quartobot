@@ -11,7 +11,7 @@ name: Publish docs site
 #   That switch turns on the `github-pages` environment this workflow
 #   targets. The first run will fail without it.
 #
-# The site publishes to https://quartobot.github.io/quartobot/.
+# The site publishes to https://seandavi.github.io/quartobot/.
 
 on:
   push:

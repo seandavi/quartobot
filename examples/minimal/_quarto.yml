@@ -2,7 +2,7 @@
 # pre-render hook. No version banner, no CI, no template machinery.
 #
 # Prereq:
-#   uv tool install git+https://github.com/quartobot/quartobot
+#   uv tool install git+https://github.com/seandavi/quartobot
 
 project:
   pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key

@@ -21,7 +21,7 @@ name: Render quartobot manuscript (lean — Option B default)
 #     workflow_dispatch:
 #   jobs:
 #     render:
-#       uses: quartobot/quartobot/.github/workflows/render-reusable-lean.yml@main
+#       uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main
 #       permissions:
 #         contents: write
 #         pull-requests: write
@@ -112,7 +112,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up quartobot toolchain
-        uses: quartobot/quartobot/actions/setup-quartobot@main
+        uses: seandavi/quartobot/actions/setup-quartobot@main
         with:
           python-version: ${{ inputs.python-version }}
           quartobot-spec: ${{ inputs.quartobot-spec }}
@@ -124,7 +124,7 @@ jobs:
         # The pre-render hook in `_quarto.yml` invokes
         # `quartobot resolve` here; `setup-quartobot` above ensures
         # it's on PATH.
-        uses: quartobot/quartobot/actions/render-manuscript@main
+        uses: seandavi/quartobot/actions/render-manuscript@main
         with:
           project: ${{ inputs.project }}
           formats: ${{ inputs.formats }}

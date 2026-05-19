@@ -11,7 +11,7 @@ demonstrate that the citation pipeline isn't limited to manuscripts.
 cd examples/book-minimal/
 
 # Once: install the quartobot CLI on PATH.
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 
 # Each render: the pre-render hook in _quarto.yml runs `quartobot resolve`
 # before pandoc, across all chapters.
@@ -38,7 +38,7 @@ Quarto book HTML output puts each chapter's references at the bottom of
 that chapter. If you want a single aggregated references page,
 that's currently a Quarto feature gap for book HTML — separate from
 the citation pipeline. Track in
-[quartobot/quartobot#34](https://github.com/quartobot/quartobot/issues/34).
+[seandavi/quartobot#34](https://github.com/seandavi/quartobot/issues/34).
 
 ## Why this isn't the template
 
@@ -56,4 +56,4 @@ the shape.
 - [Manuscript-shape minimal example](../minimal/)
 - [Citation pipeline](../../docs/citation-pipeline.md) — why pre-render hook, not a pandoc filter.
 - The book template (in progress, tracked at
-  [#36](https://github.com/quartobot/quartobot/issues/36))
+  [#36](https://github.com/seandavi/quartobot/issues/36))

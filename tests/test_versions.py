@@ -349,7 +349,7 @@ def test_render_html_omits_title_when_unknown() -> None:
 def test_render_html_includes_quartobot_attribution() -> None:
     state = derive_state(_inv(), latest_sha=None, now=FIXED_NOW)
     out = render_html(state)
-    assert "https://quartobot.github.io/quartobot/" in out
+    assert "https://seandavi.github.io/quartobot/" in out
     assert "Generated " in out
 
 

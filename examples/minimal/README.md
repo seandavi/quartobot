@@ -10,7 +10,7 @@ its own without adopting the full `quartobot-manuscript` template.
 cd examples/minimal/
 
 # Once: install the quartobot CLI on PATH.
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 
 # Each render: the pre-render hook in _quarto.yml runs `quartobot resolve`
 # before pandoc; no extra steps.
