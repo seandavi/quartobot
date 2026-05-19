@@ -26,7 +26,7 @@ quarto render
 For `pipx`-installed quartobot, run `pipx ensurepath` instead.
 
 The full canonical answer lives in [Install: verify Quarto can find
-it](./install/#verify-quarto-can-find-it).
+it](../install/#verify-quarto-can-find-it).
 
 ## A cite key won't resolve
 
@@ -183,9 +183,9 @@ before you trust an actual render.
 
 ## See also
 
-- [Install reference](./install/) — every install method, what to
+- [Install reference](../install/) — every install method, what to
   use when.
-- [Validate a manuscript](./validate-manuscript/) — the pre-flight
+- [Validate a manuscript](../validate-manuscript/) — the pre-flight
   check that catches most of these before the render fails.
-- [Resolve a single citation](./resolve-single-citation/) — the
+- [Resolve a single citation](../resolve-single-citation/) — the
   one-key shell workflow, useful for debugging.
