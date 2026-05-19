@@ -206,38 +206,45 @@ touching it. `.gitignore` is the one file modified in place
 
 ### `quartobot use github-ci`
 
-Scaffold the GitHub Actions render workflow, version banner, and
-PR-preview cleanup — the manuscript-as-software CI machinery that used
-to ride along with `init`. Opt-in, idempotent, scoped to one job.
+Scaffold the GitHub Actions render workflow + PR-preview cleanup —
+the manuscript-as-software CI machinery that used to ride along
+with `init`. Opt-in, idempotent, scoped to one job.
+
+By default it scaffolds the **lean pipeline**: latest deploy at `/`,
+PR preview at `/pr/<n>/`, generated `/versions/` page, sticky PR
+comment. No per-commit permalinks, no banner, no snapshot retention.
 
 ```
 $ quartobot use github-ci
 Project type: manuscript
+Pipeline:     lean
 
-  + _version-banner.html.template  [written]
-  + _version-banner.html  [written]
   + .github/workflows/render.yml  [written]
   + .github/workflows/pr-closed.yml  [written]
-
-# Add to your existing _quarto.yml so the version banner renders at
-# the top of the HTML output. PDF/DOCX outputs skip the include
-# automatically.
-
-format:
-  html:
-    include-before-body:
-      - _version-banner.html
 
 Next steps:
   1. Commit the new files and push to GitHub.
   2. The render workflow fires on push to main and on PRs.
-  3. After the first push, CI swaps the dev banner for a
-     per-commit permalink + 'latest' link.
+  3. After the first push, the manuscript lands at `/`,
+     the `/versions/` page lists tagged releases and open
+     PR previews, and PRs get a sticky comment with links.
 ```
 
-When `_quarto.yml` already declares the banner include, the
-manual-merge snippet is suppressed. Re-running is safe: files
-already on disk are left alone and report as `skipped-exists`.
+For the v0.1 manubot-pattern pipeline (per-commit `/v/<sha>/`
+permalinks + snapshot retention + HTML version banner), pass
+`--with-versioned-snapshots`. That mode also writes
+`_version-banner.html.template` + `_version-banner.html` and prints
+a snippet for the `_quarto.yml` banner include.
+
+The scaffolded `render.yml` is a thin caller of one of the upstream
+reusable workflows. For the full input list, the composite-action
+references, and the standalone-composition pattern, see
+[Workflows and actions](../workflows-and-actions/).
+
+Re-running is safe: files already on disk are left alone and report
+as `skipped-exists`. When `_quarto.yml` already declares the banner
+include (versioned-snapshots mode), the manual-merge snippet is
+suppressed.
 
 `use` is a click group, designed to grow. `github-ci` is the first
 inhabitant; future siblings (`use jupyter-notebooks`, `use pre-commit`,

@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
           label: "Reference",
           items: [
             { label: "CLI", link: "/cli/" },
+            { label: "Workflows and actions", link: "/workflows-and-actions/" },
           ],
         },
         {

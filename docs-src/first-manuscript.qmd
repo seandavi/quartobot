@@ -186,6 +186,12 @@ Skip this step entirely if you already have CI you're happy with,
 or if you plan to publish via `quarto publish`. The citation
 pipeline from step 3 works the same either way.
 
+For the full set of inputs you can override on the scaffolded
+workflow (formats, manuscript-name, quarto-version, project-title,
+etc.), see [Workflows and actions](../workflows-and-actions/) in
+the Reference section. Same page covers the composite actions if
+you'd rather compose your own workflow instead.
+
 Add the snippet that `quartobot use github-ci` printed to your
 `_quarto.yml`. It will look roughly like:
 
