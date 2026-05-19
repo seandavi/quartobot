@@ -156,3 +156,28 @@
   }
 }
 
+
+/* ──────────────────────────────────────────── landing-demo */
+
+.landing-demo {
+  margin: 2.5rem auto;
+  max-width: 760px;
+  text-align: center;
+}
+
+.landing-demo img {
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--sl-color-hairline);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.landing-demo figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--sl-color-gray-3);
+  font-style: italic;
+  text-align: center;
+}
