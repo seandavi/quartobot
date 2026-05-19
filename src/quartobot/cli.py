@@ -634,6 +634,134 @@ def versions_update(
     default=".",
 )
 @click.option(
+    "--bibliography",
+    "bib_path_opt",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "Path to references.bib. Defaults to `<project>/references.bib`. "
+        "Override for projects that name their bibliography differently."
+    ),
+)
+@click.option(
+    "--csl-json",
+    "json_path_opt",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    default=None,
+    help=("Path to references.json. Defaults to `<project>/references.json`."),
+)
+@click.option(
+    "--accept-bibtex",
+    "mode_accept_bibtex",
+    is_flag=True,
+    help="For each collision, drop the conflicting entry from references.json.",
+)
+@click.option(
+    "--accept-json",
+    "mode_accept_json",
+    is_flag=True,
+    help="For each collision, drop the conflicting entry from references.bib.",
+)
+@click.option(
+    "--manual",
+    "mode_manual",
+    is_flag=True,
+    help="Walk collisions one at a time and pick interactively.",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Report what would change without writing.",
+)
+def reconcile(
+    project: Path,
+    bib_path_opt: Path | None,
+    json_path_opt: Path | None,
+    mode_accept_bibtex: bool,
+    mode_accept_json: bool,
+    mode_manual: bool,
+    dry_run: bool,
+) -> None:
+    """Resolve citation-key collisions between references.bib and references.json.
+
+    When the same citation key appears in both files (e.g., a
+    hand-curated `@doi:10.1038/abc` entry and an auto-resolved one
+    from the pre-render hook), pandoc-citeproc silently picks one,
+    which is the kind of bug that surfaces months later. This command
+    forces an explicit choice via `--accept-bibtex` (drop from
+    references.json), `--accept-json` (drop from references.bib), or
+    `--manual` (interactive per-collision picker). Exactly one mode
+    must be passed; there is no default.
+
+    Whichever file gets mutated is backed up first to
+    `<name>.bak-<ISO-timestamp>` so the change is one `mv` away from
+    undo. `quartobot init` adds `*.bak-*` to `.gitignore` so backups
+    don't end up in commits.
+    """
+    modes_chosen = [mode_accept_bibtex, mode_accept_json, mode_manual]
+    if sum(modes_chosen) != 1:
+        raise click.UsageError("pass exactly one of --accept-bibtex, --accept-json, --manual")
+
+    bib_path = bib_path_opt or (project / "references.bib")
+    json_path = json_path_opt or (project / "references.json")
+    if not bib_path.exists():
+        raise click.ClickException(f"references.bib not found at {bib_path}")
+    if not json_path.exists():
+        raise click.ClickException(f"references.json not found at {json_path}")
+
+    from quartobot.reconcile import (
+        accept_bibtex as do_accept_bibtex,
+    )
+    from quartobot.reconcile import (
+        accept_json as do_accept_json,
+    )
+    from quartobot.reconcile import (
+        find_collisions,
+        format_collision_for_picker,
+        format_outcome,
+        manual_picker,
+        parse_bib,
+        parse_json,
+    )
+
+    bib_entries = parse_bib(bib_path.read_text(encoding="utf-8"))
+    json_items = parse_json(json_path.read_text(encoding="utf-8"))
+    collisions = find_collisions(bib_entries, json_items)
+
+    if not collisions:
+        click.echo("No collisions between references.bib and references.json.")
+        return
+
+    if mode_accept_bibtex:
+        outcome = do_accept_bibtex(bib_path, json_path, collisions, dry_run=dry_run)
+    elif mode_accept_json:
+        outcome = do_accept_json(bib_path, json_path, collisions, dry_run=dry_run)
+    else:
+        from quartobot.reconcile import Collision
+
+        def stdin_prompt(c: Collision) -> str:
+            click.echo(format_collision_for_picker(c))
+            answer = click.prompt(">", type=str, default="", show_default=False).strip().lower()
+            return answer or "s"  # treat empty as skip
+
+        outcome = manual_picker(
+            bib_path,
+            json_path,
+            collisions,
+            prompt=stdin_prompt,
+            dry_run=dry_run,
+        )
+
+    click.echo(format_outcome(outcome))
+
+
+@main.command()
+@click.argument(
+    "project",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=".",
+)
+@click.option(
     "--project-type",
     type=click.Choice(["auto", "manuscript", "book"]),
     default="auto",

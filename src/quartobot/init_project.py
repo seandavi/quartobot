@@ -95,6 +95,7 @@ _GITIGNORE_LINES = [
     "_freeze/",
     ".quarto/",
     "references.json",
+    "*.bak-*",
     "*_files/",
     "**/*.quarto_ipynb",
 ]
