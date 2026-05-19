@@ -459,6 +459,175 @@ def snapshots_apply(
         click.echo(f"warning: {message}", err=True)
 
 
+@main.group()
+def versions() -> None:
+    """Generate the ``/versions/`` page and its ``state.json`` companion.
+
+    The versions page lists tagged releases, recent commits on main, and
+    open PR previews — the discoverability surface that replaces the
+    deployed-pages version banner. Run from the render workflow after
+    snapshots have been applied; outputs land at
+    ``<gh-pages-dir>/versions/``.
+    """
+
+
+@versions.command("update")
+@_GH_PAGES_OPT
+@_PROJECT_OPT
+@_LATEST_SHA_OPT
+@_TAG_SHAS_OPT
+@click.option(
+    "--open-prs",
+    "open_prs_path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "JSON file in `gh pr list --json number,title,headRefName,headRefOid` "
+        "shape. Each entry's `headRefOid` is the head sha. If omitted, no "
+        "PRs are listed (workflows on the main branch can pass an empty "
+        "list or skip this flag entirely)."
+    ),
+)
+@click.option(
+    "--sha-info",
+    "sha_info_path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
+    default=None,
+    help=(
+        "TSV file with three columns: full-sha, commit-subject, ISO-date. "
+        "Output of `git log --format='%H%x09%s%x09%aI'`. Used to enrich "
+        "the version entries with commit titles and dates; entries with "
+        "no matching row fall back to the snapshot's mtime date and a "
+        "missing title."
+    ),
+)
+@click.option(
+    "--project-title",
+    type=str,
+    default="manuscript",
+    show_default=True,
+    help="Title shown in the page's <h1> and <title> tags.",
+)
+def versions_update(
+    gh_pages_dir: Path,
+    project: Path,
+    latest_sha: str | None,
+    tag_shas: str | None,
+    open_prs_path: Path | None,
+    sha_info_path: Path | None,
+    project_title: str,
+) -> None:
+    """Derive state from gh-pages + git facts and write the versions page.
+
+    Reads the on-disk gh-pages inventory, cross-references with caller-
+    supplied git tag and commit metadata, and writes
+    ``versions/state.json`` and ``versions/index.html`` under
+    ``gh-pages-dir``. Idempotent: running again with the same inputs
+    produces a byte-identical result modulo the ``generated_at``
+    timestamp.
+
+    The caller (typically the render workflow) is responsible for
+    committing and pushing the result.
+    """
+    import json as _json
+
+    from quartobot.snapshots import inventory as _inventory
+    from quartobot.versions import (
+        PRInfo,
+        ShaInfo,
+        TagInfo,
+        derive_state,
+        write_page,
+    )
+
+    resolved_latest, resolved_tag_shas = _resolve_git_facts(project, latest_sha, tag_shas)
+
+    # Tag info — resolved to (sha, tag) pairs. We only know the shas
+    # from _resolve_git_facts; ask git for the corresponding tag names.
+    tag_info: list[TagInfo] = []
+    if resolved_tag_shas:
+        import subprocess
+
+        try:
+            raw = subprocess.check_output(
+                [
+                    "git",
+                    "for-each-ref",
+                    "--format=%(objectname)%09%(refname:short)",
+                    "refs/tags/",
+                ],
+                cwd=project,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            )
+            for line in raw.splitlines():
+                if "\t" not in line:
+                    continue
+                sha, tag = line.split("\t", 1)
+                if sha in resolved_tag_shas:
+                    tag_info.append(TagInfo(sha=sha, tag=tag))
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            # No git, or no tags. Silent fallback — the inventory still
+            # gets a versions page, just with no tagged-release section.
+            pass
+
+    # PRs — gh CLI JSON shape.
+    open_prs: list[PRInfo] = []
+    if open_prs_path is not None:
+        raw_prs = _json.loads(open_prs_path.read_text(encoding="utf-8"))
+        for p in raw_prs:
+            try:
+                open_prs.append(
+                    PRInfo(
+                        number=int(p["number"]),
+                        title=str(p["title"]),
+                        branch=str(p.get("headRefName", "")),
+                        sha=str(p.get("headRefOid", "")),
+                        date=p.get("updatedAt"),
+                    )
+                )
+            except (KeyError, ValueError, TypeError) as exc:
+                raise click.ClickException(
+                    f"malformed PR entry in {open_prs_path}: {p!r} ({exc})"
+                ) from exc
+
+    # Commit display metadata — TSV `<sha>\t<subject>\t<iso-date>`.
+    sha_info: dict[str, ShaInfo] = {}
+    if sha_info_path is not None:
+        for line in sha_info_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            parts = line.split("\t")
+            if len(parts) < 1:
+                continue
+            sha = parts[0].strip()
+            if not sha:
+                continue
+            title = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
+            date = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+            sha_info[sha] = ShaInfo(sha=sha, title=title, date=date)
+
+    inv = _inventory(gh_pages_dir)
+    state = derive_state(
+        inv,
+        latest_sha=resolved_latest,
+        sha_info=sha_info,
+        tag_info=tag_info,
+        open_prs=open_prs,
+    )
+    state_path, html_path = write_page(state, gh_pages_dir, project_title=project_title)
+
+    click.echo(
+        f"Wrote {state_path.relative_to(gh_pages_dir)} "
+        f"and {html_path.relative_to(gh_pages_dir)}"
+    )
+    click.echo(
+        f"  {len(state.entries)} version entries "
+        f"({sum(1 for e in state.entries if e.tag)} tagged), "
+        f"{len(state.prs)} open PR previews"
+    )
+
+
 @main.command()
 @click.argument(
     "project",
