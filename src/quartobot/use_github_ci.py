@@ -1,15 +1,24 @@
-"""Scaffold the GitHub Actions render workflow + version banner.
+"""Scaffold the GitHub Actions render workflow.
 
-`quartobot use github-ci` writes the manuscript-as-software machinery
-that used to ride along with `quartobot init`: a thin
-`.github/workflows/render.yml` that calls the upstream reusable
-workflow, the version-banner Quarto include (template + dev
-placeholder), and a PR-preview cleanup workflow.
+`quartobot use github-ci` writes a thin `.github/workflows/render.yml`
+that calls one of two upstream reusable workflows, plus a PR-preview
+cleanup workflow.
 
-Idempotent. Files already on disk are reported as `skipped-exists`,
-not overwritten. The one place this command leaves work for the
-user is `_quarto.yml`: if it exists but doesn't declare the banner
-include, the command prints the snippet to merge in.
+The default is the **lean** pipeline (Option B per #118): latest at
+``/``, PR previews at ``/pr/<n>/``, a generated ``/versions/`` page,
+sticky PR comment with preview links. Built on Quarto's own publish
+machinery, so the surface area is intentionally narrow.
+
+The opt-in **versioned-snapshots** pipeline (``--with-versioned-snapshots``)
+adds the manubot-style per-commit ``/v/<sha>/`` permalink deploy, the
+``quartobot snapshots`` retention policy, and the in-page HTML version
+banner. This was quartobot's v0.1 default; it now requires an explicit
+flag.
+
+Idempotent. Files already on disk are reported as ``skipped-exists``,
+not overwritten. In versioned-snapshots mode, the command also prints
+a YAML snippet for the user to merge into ``_quarto.yml`` if the
+banner include isn't already declared.
 """
 
 from __future__ import annotations
@@ -52,17 +61,26 @@ _VERSION_BANNER_DEV = (
 # fmt: on
 
 
-def _render_workflow(project_type: str) -> str:
+def _render_workflow(project_type: str, *, with_versioned_snapshots: bool) -> str:
     """Return the render-workflow caller for the given project type.
 
-    Thin wrapper around the upstream reusable workflow; the consumer
-    side is just the trigger config plus the `uses:` line and a
+    Thin wrapper around an upstream reusable workflow; the consumer
+    side is just the trigger config plus the ``uses:`` line and a
     handful of inputs.
+
+    Args:
+        project_type: Quarto project shape (``manuscript`` or ``book``).
+        with_versioned_snapshots: When ``True``, target the v0.1
+            reusable workflow (per-commit ``/v/<sha>/`` permalinks +
+            retention + banner). When ``False`` (default), target the
+            lean Option-B workflow.
     """
+    reusable = "render-reusable.yml" if with_versioned_snapshots else "render-reusable-lean.yml"
+    docs_url = f"https://github.com/quartobot/quartobot/blob/main/.github/workflows/{reusable}"
     return f"""\
 # Renders on every push and PR via the upstream reusable workflow.
 # Override inputs in the `with:` block below; see
-#   https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml
+#   {docs_url}
 # for the full list.
 
 name: Render
@@ -76,7 +94,7 @@ on:
 
 jobs:
   render:
-    uses: quartobot/quartobot/.github/workflows/render-reusable.yml@main
+    uses: quartobot/quartobot/.github/workflows/{reusable}@main
     permissions:
       contents: write
       pull-requests: write
@@ -156,11 +174,12 @@ format:
 
 @dataclass
 class UseOutcome:
-    """The aggregate result of a `quartobot use github-ci` run."""
+    """The aggregate result of a ``quartobot use github-ci`` run."""
 
     actions: list[Action] = field(default_factory=list)
     project_type: str = "manuscript"
     manual_merge_snippet: str | None = None
+    with_versioned_snapshots: bool = False
 
 
 # ---------------------------------------------------------------- helpers
@@ -211,18 +230,28 @@ def _banner_already_included(project: Path) -> bool:
 def apply_github_ci(
     project: Path,
     project_type: str = "auto",
+    *,
+    with_versioned_snapshots: bool = False,
 ) -> UseOutcome:
-    """Scaffold the GitHub Actions CI + version banner into `project`.
+    """Scaffold the GitHub Actions CI into ``project``.
 
     Args:
         project: Path to an existing Quarto project root.
-        project_type: `"auto"` (detect from `_quarto.yml`),
-            `"manuscript"`, or `"book"`. `"auto"` defaults to
-            `"manuscript"` when there's nothing to detect from.
+        project_type: ``"auto"`` (detect from ``_quarto.yml``),
+            ``"manuscript"``, or ``"book"``. ``"auto"`` defaults to
+            ``"manuscript"`` when there's nothing to detect from.
+        with_versioned_snapshots: When ``True``, scaffold the v0.1
+            manubot-style pipeline: per-commit ``/v/<sha>/`` permalink
+            deploys, snapshot retention, in-page version banner.
+            When ``False`` (default), scaffold the lean Option-B
+            pipeline: latest at root, PR previews, ``/versions/`` page,
+            sticky PR comment. No banner files written, no
+            ``_quarto.yml`` merge snippet.
 
     Returns:
-        `UseOutcome` describing each file action and an optional
-        manual-merge snippet for the banner include.
+        :class:`UseOutcome` describing each file action and an
+        optional manual-merge snippet (only in versioned-snapshots
+        mode).
     """
     if project_type == "auto":
         detected = detect_project_type(project)
@@ -230,19 +259,25 @@ def apply_github_ci(
     else:
         ptype = project_type
 
-    outcome = UseOutcome(project_type=ptype)
+    outcome = UseOutcome(project_type=ptype, with_versioned_snapshots=with_versioned_snapshots)
+
+    if with_versioned_snapshots:
+        # Banner files only land in versioned-snapshots mode. The lean
+        # default doesn't use them.
+        outcome.actions.append(
+            write_if_missing(
+                project / "_version-banner.html.template",
+                _VERSION_BANNER_TEMPLATE,
+            )
+        )
+        outcome.actions.append(
+            write_if_missing(project / "_version-banner.html", _VERSION_BANNER_DEV)
+        )
 
     outcome.actions.append(
         write_if_missing(
-            project / "_version-banner.html.template",
-            _VERSION_BANNER_TEMPLATE,
-        )
-    )
-    outcome.actions.append(write_if_missing(project / "_version-banner.html", _VERSION_BANNER_DEV))
-    outcome.actions.append(
-        write_if_missing(
             project / ".github" / "workflows" / "render.yml",
-            _render_workflow(ptype),
+            _render_workflow(ptype, with_versioned_snapshots=with_versioned_snapshots),
         )
     )
     outcome.actions.append(
@@ -252,14 +287,12 @@ def apply_github_ci(
         )
     )
 
-    # If `_quarto.yml` exists and doesn't already wire the banner
-    # include, print the snippet for manual merge. If `_quarto.yml`
-    # doesn't exist at all, the user hasn't run `quartobot init` yet
-    # and we stay quiet on the merge front — running init first is
-    # the documented path.
-    yml = project / "_quarto.yml"
-    if yml.exists() and not _banner_already_included(project):
-        outcome.manual_merge_snippet = _BANNER_INCLUDE_SNIPPET
+    # Banner include snippet is only relevant in versioned-snapshots
+    # mode. In lean mode, the versions page replaces the banner.
+    if with_versioned_snapshots:
+        yml = project / "_quarto.yml"
+        if yml.exists() and not _banner_already_included(project):
+            outcome.manual_merge_snippet = _BANNER_INCLUDE_SNIPPET
 
     return outcome
 
@@ -273,7 +306,9 @@ def format_outcome(outcome: UseOutcome, *, project: Path) -> str:
         "manual-merge": "!",
     }
     lines: list[str] = []
+    mode = "versioned-snapshots" if outcome.with_versioned_snapshots else "lean"
     lines.append(f"Project type: {outcome.project_type}")
+    lines.append(f"Pipeline:     {mode}")
     lines.append("")
     for action in outcome.actions:
         try:
@@ -291,8 +326,14 @@ def format_outcome(outcome: UseOutcome, *, project: Path) -> str:
     lines.append("Next steps:")
     lines.append("  1. Commit the new files and push to GitHub.")
     lines.append("  2. The render workflow fires on push to main and on PRs.")
-    lines.append("  3. After the first push, CI swaps the dev banner for a")
-    lines.append("     per-commit permalink + 'latest' link.")
+    if outcome.with_versioned_snapshots:
+        lines.append("  3. After the first push, CI swaps the dev banner for a")
+        lines.append("     per-commit permalink + 'latest' link, and snapshot")
+        lines.append("     retention starts pruning aged-out `v/<sha>/` dirs.")
+    else:
+        lines.append("  3. After the first push, the manuscript lands at `/`,")
+        lines.append("     the `/versions/` page lists tagged releases and open")
+        lines.append("     PR previews, and PRs get a sticky comment with links.")
     return "\n".join(lines)
 
 

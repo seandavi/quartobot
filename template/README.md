@@ -12,12 +12,6 @@ hosting.
 
 ## What you get
 
-- **Per-commit permalinks** at `https://<owner>.github.io/<repo>/v/<sha>/`.
-  The HTML version banner embeds the commit's snapshot URL so a
-  downloaded file always knows which version it is.
-- **PR previews** at `https://<owner>.github.io/<repo>/pr/<n>/`, with a
-  sticky comment on the PR linking to the latest preview and the
-  per-commit snapshots.
 - **Auto-resolved citations.** Paste `@doi:10.1371/journal.pcbi.1007128`
   in your prose and the entry appears in the bibliography on next
   render. Same for `@pmid:`, `@arxiv:`, `@isbn:`, bare DOIs, and the
@@ -26,6 +20,12 @@ hosting.
 - **Hand-curated entries** live alongside in `references.bib` for the
   things the resolver can't (or shouldn't) handle.
 - **Multi-format output.** HTML, PDF, DOCX from one source on every push.
+- **PR previews** at `https://<owner>.github.io/<repo>/pr/<n>/`, with a
+  sticky comment on the PR linking to the latest preview and the
+  rendered main branch.
+- **A `/versions/` page** that lists tagged releases, recent commits on
+  main, and open PR previews. Linked from the manuscript footer; safe
+  to badge in your repo README.
 
 ## Quick start
 
@@ -34,7 +34,7 @@ gh repo create my-paper --template quartobot/quartobot-manuscript
 cd my-paper
 
 # Local render needs Quarto and quartobot on PATH.
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install quartobot
 quarto render index.qmd
 
 # Push to GitHub. CI deploys to gh-pages on the first push to main.
@@ -51,8 +51,6 @@ After the first push, enable GitHub Pages in the repo settings
 ├── _quarto.yml                  # project + pre-render hook + bibliography
 ├── index.qmd                    # the manuscript itself
 ├── references.bib               # hand-curated bibliography
-├── _version-banner.html.template  # HTML banner injected by CI
-├── _version-banner.html         # dev placeholder (overwritten on main builds)
 └── .github/workflows/
     ├── render.yml               # render + deploy + PR preview comment
     └── pr-closed.yml            # delete pr/<n>/ when the PR closes
@@ -92,48 +90,51 @@ Quarto provides the publishing layer [@quarto2024].
 The `@doi:` key gets resolved through the pre-render hook. The
 `@quarto2024` key is read directly from `references.bib`.
 
-## The version banner
+## How the `/versions/` page works
 
-`_version-banner.html.template` contains the HTML banner Quarto injects
-above the title (via `format.html.include-before-body`). On push-to-main
-builds, CI substitutes five placeholders:
+After each render, the CI workflow runs `quartobot versions update`
+against the gh-pages branch. The command builds a state file by
+cross-referencing what's on disk (per-commit dirs, PR-preview dirs)
+with caller-supplied git facts (latest sha, tags, open PRs), then
+renders `versions/index.html` from that state.
 
-- `__VERSION_SHA__` — the 7-character short SHA.
-- `__VERSION_URL__` — the immutable per-commit permalink.
-- `__VERSION_PDF__` — direct link to the PDF for that snapshot.
-- `__VERSION_LATEST__` — the `/` root of the gh-pages site.
-- `__VERSION_GH__` — the GitHub repo URL.
+In the lean default pipeline, there are no per-commit deploys, so the
+"Tagged releases" and "Recent commits on main" sections show "no
+entries yet" messages — the page still serves the "Latest" link and
+the "Open PR previews" list, both of which are populated.
 
-PR builds keep the committed dev placeholder; the PR-specific URLs are
-posted in the sticky comment on the PR instead. PDF and DOCX skip the
-banner entirely.
-
-Customizing the styling? Edit `_version-banner.html.template` directly.
-The template is plain HTML/CSS.
+To opt into the manubot-style per-commit permalinks (so those sections
+fill in), see "Opt into versioned snapshots" below.
 
 ## Wiring assumptions
 
 - `index.html`, `index.pdf`, `index.docx` are the render outputs Quarto
   writes to the project root. The workflow's staging step copies them
-  into `public/v/<sha>/` and `public/pr/<n>/` for deployment.
+  to `public/` (for the root deploy) and `public/pr/<n>/` (for PR
+  previews).
 - The workflow assumes GitHub Pages serves from `gh-pages` branch with
-  `keep_files: true`, so old snapshots and other open PRs are preserved
-  across deploys.
+  `keep_files: true`, so other open PRs and the `/versions/` page are
+  preserved across deploys.
 - Forks can't push to gh-pages with the default `GITHUB_TOKEN`. CI still
   validates the build on fork PRs but skips the deploy and the sticky
   comment.
 
-## Snapshot retention
+## Opt into versioned snapshots (manubot pattern)
 
-By default, `gh-pages` keeps the latest build, any commit carrying a
-git tag, and the 10 most recent untagged snapshots. Everything older
-becomes a ~1 KB redirect stub that forwards visitors to the latest
-version, so previously-cited URLs do not 404. Total `gh-pages` size is
-hard-capped at 800 MB — the workflow refuses to push past that and
-fails loudly, so you notice before GitHub starts emailing about your
-1 GB Pages quota.
+If you want per-commit `/v/<sha>/` permalinks alongside the latest
+deploy — the manubot manuscript-as-software pattern — re-scaffold the
+workflow with:
 
-Tune the policy in `_quarto.yml`:
+```bash
+quartobot use github-ci --with-versioned-snapshots
+```
+
+That swaps `render.yml` to point at the versioned reusable workflow,
+adds the HTML version-banner files, prints a YAML snippet for the
+`_quarto.yml` banner include, and turns on the snapshot retention
+policy (defaults: keep latest + tags forever + 10 most recent
+untagged; soft 800 MB budget). Tune the retention via a `quartobot`
+block in `_quarto.yml`:
 
 ```yaml
 quartobot:
@@ -155,14 +156,14 @@ git tag biorxiv-v1
 git push origin biorxiv-v1
 ```
 
-The next render's prune step picks up the new tag and promotes that
-snapshot out of the rolling window.
+The next render picks up the new tag and surfaces it on the
+`/versions/` page.
 
 ## See also
 
 - [quartobot DESIGN doc](https://github.com/quartobot/quartobot/blob/main/DESIGN.md) — the architecture and why.
 - [Citation pipeline](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md) — why pre-render hook, not a pandoc filter.
-- [Venice 2026 manuscript](https://github.com/seandavi/2026-venice-spatial-hackathon-manuscript) — a 25-author preprint that's been running the CI half of this pattern in production.
+- [Venice 2026 manuscript](https://github.com/seandavi/2026-venice-spatial-hackathon-manuscript) — a 25-author preprint running the CI half of this pattern in production (on the versioned-snapshots pipeline).
 - [manubot](https://github.com/manubot/manubot) — the upstream Python library that does the citation resolution.
 - [Himmelstein et al. 2019](https://doi.org/10.1371/journal.pcbi.1007128) — the foundational manubot paper.
 

@@ -40,6 +40,3 @@ _extensions/
 .RData
 .Rproj.user/
 
-# Exception: the version banner is checked-in HTML source, not render output
-!_version-banner.html
-!_version-banner.html.template

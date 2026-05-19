@@ -1,19 +1,18 @@
 # Renders the manuscript on every push and PR. Behavior — multi-format
-# render, immutable per-commit permalink in HTML, gh-pages deploy, sticky
-# PR comment with preview links — lives in the upstream reusable
-# workflow. Bug fixes there flow here automatically via the version pin.
+# render, latest at `/`, PR preview at `/pr/<n>/`, generated `/versions/`
+# page, sticky PR comment with preview links — lives in the upstream
+# reusable workflow. Bug fixes there flow here automatically via the
+# version pin.
 #
 # To customize the pipeline, override inputs below (`formats`,
 # `manuscript-name`, etc.). See:
-#   https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml
+#   https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable-lean.yml
 # for the full list of inputs.
 #
-# For deeper customization (forking the workflow itself), the
-# `quartobot detach` CLI command — tracked at
-# https://github.com/quartobot/quartobot/issues/25 — will copy the full
-# pipeline out so you can edit it freely. That command isn't shipped
-# yet; until then, copy `render-reusable.yml` from the quartobot repo
-# into this directory and inline the references to composite actions.
+# To opt into the manubot-style per-commit permalink pipeline (with
+# `/v/<sha>/` deploys, snapshot retention, version banner), regenerate
+# this file with `quartobot use github-ci --with-versioned-snapshots`,
+# or change the `uses:` line below to `render-reusable.yml@main`.
 
 name: Render manuscript
 
@@ -26,7 +25,7 @@ on:
 
 jobs:
   render:
-    uses: quartobot/quartobot/.github/workflows/render-reusable.yml@main
+    uses: quartobot/quartobot/.github/workflows/render-reusable-lean.yml@main
     permissions:
       contents: write
       pull-requests: write

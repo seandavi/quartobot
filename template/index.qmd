@@ -72,8 +72,8 @@ Manubot's prefix syntax, available as-is:
 - Add citations as you go — by DOI/PMID where possible, hand-curated for
   the rest.
 - Push to `main`. CI renders HTML, PDF, and DOCX; deploys to
-  `https://<owner>.github.io/<repo>/`; embeds the per-commit permalink
-  in the HTML version banner.
+  `https://<owner>.github.io/<repo>/`; updates the `/versions/` page
+  with tagged releases and open PR previews.
 - Open a PR. CI posts a sticky comment with the preview URL.
 
 The full design is in [DESIGN.md](https://github.com/quartobot/quartobot/blob/main/DESIGN.md);

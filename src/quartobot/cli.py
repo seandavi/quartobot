@@ -691,20 +691,47 @@ def use() -> None:
         "and falls back to manuscript when there's nothing to detect from."
     ),
 )
-def use_github_ci(project: Path, project_type: str) -> None:
-    """Scaffold the GitHub Actions render workflow + version banner.
+@click.option(
+    "--with-versioned-snapshots",
+    is_flag=True,
+    default=False,
+    help=(
+        "Opt into the manubot-style pipeline: per-commit `/v/<sha>/` "
+        "permalink deploys, snapshot retention policy, and the in-page "
+        "version banner. The default (lean) pipeline ships latest at "
+        "root, PR previews, and a `/versions/` page; the versioned "
+        "pipeline adds the per-commit permalink layer on top."
+    ),
+)
+def use_github_ci(
+    project: Path,
+    project_type: str,
+    with_versioned_snapshots: bool,
+) -> None:
+    """Scaffold the GitHub Actions render workflow.
 
-    Writes `.github/workflows/render.yml` (a thin caller of the
-    upstream reusable workflow), the PR-preview cleanup workflow,
-    and the version-banner Quarto include (template + dev
-    placeholder). If `_quarto.yml` exists but doesn't declare the
-    banner include, prints a YAML snippet to merge in manually.
+    Default (lean) pipeline writes ``.github/workflows/render.yml``
+    pointing at the lean reusable workflow, plus the PR-preview
+    cleanup workflow. The manuscript ships at ``/``, PR previews
+    land at ``/pr/<n>/``, and the generated ``/versions/`` page is
+    the version-discovery surface.
+
+    Opt into the v0.1 manubot-style pipeline with
+    ``--with-versioned-snapshots``: adds per-commit ``/v/<sha>/``
+    permalink deploys, snapshot retention pruning, and the in-page
+    version-banner include. The command then also writes the banner
+    template files and prints a YAML snippet to merge into
+    ``_quarto.yml`` for the banner include.
 
     Idempotent. Files already present are reported as skipped.
     """
     from quartobot.use_github_ci import apply_github_ci, format_outcome
 
-    outcome = apply_github_ci(project, project_type=project_type)
+    outcome = apply_github_ci(
+        project,
+        project_type=project_type,
+        with_versioned_snapshots=with_versioned_snapshots,
+    )
     click.echo(format_outcome(outcome, project=project))
 
 
