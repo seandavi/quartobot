@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="quartobot CLI demo: scan, resolve, references.json" width="780">
+  <img src="docs/demo.gif" alt="quartobot demo: scan, resolve, references.json, quarto render, formatted citation in the rendered manuscript" width="780">
 </p>
 
 ---
@@ -118,16 +118,17 @@ the production reference the template lifted from.
 
 ## Demo recording
 
-The GIF above was recorded with [`asciinema`](https://github.com/asciinema/asciinema) (cast) + [`agg`](https://github.com/asciinema/agg) (cast → GIF). To re-record after changing the demo flow:
+The GIF above walks `quartobot scan` → `quartobot resolve` (live registrar lookups) → `quarto render --to html` → the formatted citation in the rendered manuscript. Recorded with [`asciinema`](https://github.com/asciinema/asciinema) (cast) + [`agg`](https://github.com/asciinema/agg) (cast → GIF). To re-record after changing the demo flow:
 
 ```bash
 brew install asciinema agg
-./scripts/demo-setup.sh
-asciinema rec docs/demo.cast --command "bash scripts/demo.sh" --overwrite
-agg docs/demo.cast docs/demo.gif --font-size 18 --theme dracula --speed 1.2
+bash scripts/demo-setup.sh
+asciinema rec docs/demo.cast --command 'bash scripts/demo.sh' --overwrite
+agg docs/demo.cast docs/demo.gif --font-size 18 --theme dracula --speed 1.2 --cols 80 --rows 28
+cp docs/demo.gif site/public/demo.gif  # also serves the landing-page embed
 ```
 
-The `scripts/demo.tape` file is a vhs alternative for a higher-fidelity render once a Chrome/Chromium environment is available.
+The `scripts/demo.tape` file is a [vhs](https://github.com/charmbracelet/vhs) alternative for a higher-fidelity render once a Chrome/Chromium environment is available.
 
 ## License
 

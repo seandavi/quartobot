@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
-# Demo script for screen-recording quartobot's pre-render hook in action.
+# Demo script for screen-recording quartobot's pre-render hook + render
+# in action. Walks scan → resolve → references.json → quarto render →
+# the formatted citation in the rendered HTML.
 #
-# Designed to run under asciinema (or any screen recorder) and produce a
-# ~60-second cast showing the citation-resolution magic without the
-# slow-render bits. Skips `quarto render` itself because LaTeX install
-# can add 1-2 minutes on first run; the README narrative covers what
-# `quarto render` does after the JSON is written.
+# Renders to HTML only (skipping PDF) so the demo stays ~40 seconds —
+# PDF takes ~30s extra under TinyTeX on first run. The HTML output
+# is enough to show the citation got formatted correctly.
 #
 # Usage:
-#   asciinema rec docs/demo.cast --command 'bash scripts/demo.sh' --idle-time-limit 2
-#
-# Then upload the cast to asciinema.org (or commit and embed as an
-# <asciinema-player> in site/public/) and update the README + landing
-# page to point at the cast URL.
+#   asciinema rec docs/demo.cast --command 'bash scripts/demo.sh' --overwrite
 #
 # Re-running is safe: a fresh scratch directory is used each time.
+# Prerequisites: quartobot + quarto on PATH.
 
 set -euo pipefail
 
@@ -66,15 +63,37 @@ sleep "$PAUSE"
 echo
 
 # Step 4: show the resulting bibliography — real metadata, real titles.
-typewriter "head -25 references.json"
-head -25 references.json
+typewriter "head -18 references.json"
+head -18 references.json
 sleep "$PAUSE"
 echo
 
-# Final beat: what happens next.
+# Step 5: render the manuscript. The citations get formatted correctly
+# because pandoc-citeproc reads references.json (and references.bib).
+# --quiet keeps quarto's verbose metadata out of the demo frame.
+typewriter "quarto render --to html"
+quarto render --to html --quiet 2>&1 || true
+printf '  rendered index.html\n'
+sleep "$PAUSE"
 echo
-printf '\033[1;36m# Now `quarto render` produces the manuscript with formatted citations.\033[0m\n'
-printf '\033[1;36m# Commit references.json and CI will skip the network round-trip.\033[0m\n'
+
+# Step 6: show what landed on disk.
+typewriter "ls -lh index.html"
+ls -lh index.html
+sleep "$PAUSE"
+echo
+
+# Step 7: the payoff frame — the resolved citation, properly formatted,
+# in the rendered manuscript.
+typewriter "grep -oE 'Wickham[^<]{0,80}' index.html | head -2"
+grep -oE 'Wickham[^<]{0,80}' index.html | head -2 || true
+sleep "$PAUSE"
+echo
+
+# Final beat: what this means for CI.
+echo
+printf '\033[1;36m# Commit references.json and CI is network-free —\033[0m\n'
+printf '\033[1;36m# every machine renders the same bibliography, every time.\033[0m\n'
 sleep 3
 
 # Cleanup. The cast file (if any) is in the recording dir, not here.
