@@ -47,9 +47,7 @@ def test_lean_apply_no_manual_merge_snippet(tmp_path):
         "quartobot resolve --from-scan . --output references.json --id-mode citation-key"
     )
     (tmp_path / "_quarto.yml").write_text(
-        "project:\n"
-        "  type: default\n"
-        f"  pre-render: {pre_render_cmd}\n"
+        f"project:\n  type: default\n  pre-render: {pre_render_cmd}\n"
     )
     outcome = apply_github_ci(tmp_path)
     assert outcome.manual_merge_snippet is None
@@ -213,9 +211,7 @@ def test_cli_use_github_ci_in_empty_dir_defaults_to_lean(tmp_path):
 
 def test_cli_use_github_ci_with_versioned_snapshots_flag(tmp_path):
     runner = CliRunner()
-    result = runner.invoke(
-        main, ["use", "github-ci", str(tmp_path), "--with-versioned-snapshots"]
-    )
+    result = runner.invoke(main, ["use", "github-ci", str(tmp_path), "--with-versioned-snapshots"])
     assert result.exit_code == 0, result.output
     assert (tmp_path / ".github/workflows/render.yml").exists()
     assert (tmp_path / "_version-banner.html").exists()

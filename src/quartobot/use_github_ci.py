@@ -75,12 +75,8 @@ def _render_workflow(project_type: str, *, with_versioned_snapshots: bool) -> st
             retention + banner). When ``False`` (default), target the
             lean Option-B workflow.
     """
-    reusable = (
-        "render-reusable.yml" if with_versioned_snapshots else "render-reusable-lean.yml"
-    )
-    docs_url = (
-        f"https://github.com/quartobot/quartobot/blob/main/.github/workflows/{reusable}"
-    )
+    reusable = "render-reusable.yml" if with_versioned_snapshots else "render-reusable-lean.yml"
+    docs_url = f"https://github.com/quartobot/quartobot/blob/main/.github/workflows/{reusable}"
     return f"""\
 # Renders on every push and PR via the upstream reusable workflow.
 # Override inputs in the `with:` block below; see

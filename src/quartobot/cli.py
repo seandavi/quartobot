@@ -618,8 +618,7 @@ def versions_update(
     state_path, html_path = write_page(state, gh_pages_dir, project_title=project_title)
 
     click.echo(
-        f"Wrote {state_path.relative_to(gh_pages_dir)} "
-        f"and {html_path.relative_to(gh_pages_dir)}"
+        f"Wrote {state_path.relative_to(gh_pages_dir)} and {html_path.relative_to(gh_pages_dir)}"
     )
     click.echo(
         f"  {len(state.entries)} version entries "
