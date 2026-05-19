@@ -1,32 +1,133 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 — 2026-05-19
+
+The release that makes quartobot ready to onboard non-Sean users. The
+default `use github-ci` pipeline shrinks to "Quarto's own publish +
+quartobot's pre-render hook"; the manubot-pattern per-commit
+permalink layer becomes opt-in. Two new commands ship: `versions`
+(generates the `/versions/` page that replaces the deployed-pages
+banner) and `reconcile` (resolves bib/json citation-key collisions
+with explicit modes and timestamped backups). A run of persona
+reviews tunes the docs for the four audiences we onboard from
+(Quarto, manubot, JOSS reviewers, and researchers further upstream
+on the markdown/git on-ramp).
 
 ### Added
 
-- Docs: "How to validate a manuscript" how-to (check-by-check walk-through, worked failure cases, pre-commit / CI wiring). Closes #81.
-- Docs: "How to use quartobot in a Quarto book" how-to. Closes #79.
-- Docs: "How to resolve a single citation" how-to (CLI stdout mode + MCP tool). Closes #80.
-- Docs: "How to use quartobot in a Jupyter notebook manuscript" how-to. Closes #77.
-- Docs: "First manuscript in 15 minutes" end-to-end tutorial under
-  Tutorials in the sidebar. Walks an author from `quarto create
-  project manuscript` through `init`, `use github-ci`, `quarto
-  render`, `gh repo create`, and the PR-preview round trip. Closes
-  #82.
-- Docs: "MCP + Claude Desktop" tutorial — agent grounds citations against quartobot's resolver via the MCP server. Closes #83.
-- Docs: "How to use quartobot in a Quarto website" how-to. Closes #78.
-- Docs: "Shell-tool agents grounding citations" tutorial — the non-MCP companion to the Claude Desktop tutorial. Closes #84.
+- `quartobot versions update` — generates the `/versions/` page and
+  `state.json` companion on gh-pages. Cross-references the on-disk
+  inventory (`v/<sha>/` snapshots, `pr/<n>/` previews) with
+  caller-supplied git facts (latest sha, tags, open PRs) and renders
+  a static HTML page listing tagged releases, recent commits on
+  main, and open PR previews. No JS, inline CSS, self-healing from
+  gh-pages contents if `state.json` is corrupted. Replaces the
+  deployed-pages HTML version banner as the version-discovery
+  surface. Composes with `quartobot.snapshots`. Implements part of
+  #118.
+- `quartobot reconcile` — explicit resolution of citation-key
+  collisions between `references.bib` and `references.json`. Three
+  modes: `--accept-bibtex` drops conflicting entries from
+  `references.json`; `--accept-json` drops from `references.bib`;
+  `--manual` walks collisions one at a time with a side-by-side
+  picker. No default; user must pick to surface a deliberate choice
+  rather than rely on pandoc-citeproc's silent later-wins. Both
+  files get a timestamped `.bak-<ISO-TS>` backup before mutation, so
+  any choice is one `mv` away from undo. `--dry-run` previews
+  without writing. `quartobot init` adds `*.bak-*` to the
+  `.gitignore` template. Closes #10, implements #122.
+- `quartobot use github-ci --with-versioned-snapshots` — opt-in flag
+  to scaffold the v0.1/v0.2 manubot-style pipeline (per-commit
+  `/v/<sha>/` permalink deploys, snapshot retention via
+  `quartobot.snapshots`, in-page version banner). The lean default
+  (see "Changed" below) skips these; the flag puts them back. Part
+  of #118.
+- New reusable workflow `.github/workflows/render-reusable-lean.yml`
+  for the new default. Setup quartobot → quarto-actions/render →
+  stage (latest at `/`, PR preview at `/pr/<n>/`) → `quartobot
+  versions update` → deploy via peaceiris/actions-gh-pages → sticky
+  PR comment. No per-commit deploys, no banner injection, no
+  snapshot prune. The v0.1 `render-reusable.yml` stays in place
+  unchanged for opt-in users (notably the Venice manuscript which
+  pins to `@main`).
+- Docs: **Coming from…** per-persona migration page covering Quarto
+  authors with manual `.bib`, manubot users, Zotero users, raw
+  LaTeX / Overleaf users. Prerequisites self-assessment for the
+  four-skill baseline (Markdown, GitHub, terminal, PRs), with
+  on-ramp pointers. Honest "When quartobot isn't for you" section
+  that names the cases where another tool fits better.
+- Docs: **Troubleshooting** page (closes #110). PATH issue during
+  `quarto render`, failed identifier resolution, cache semantics
+  (`references.json` is the cache), `references.bib` + JSON
+  precedence, `--id-mode citation-key` requirement, network
+  behavior. Sourced from `install.md` (PATH) and `resolve.py`
+  (cache + failure paths) so the answers reflect actual behavior.
+- Docs site: maintainer attribution ("Maintained by Sean Davis") on
+  the landing-page footer + a per-page "Report an issue" link
+  client-side-appended next to Starlight's "Edit page" link, with
+  the page title and URL pre-filled in the issue body.
+- Docs site: Google Analytics 4 (`G-QNEGW3C1W0`) wired via Starlight
+  head injection with custom CTA events (`install_command_copy`,
+  `hero_cta_click`, `layer_cta_click`, `card_click`). Closes #113.
+- Carry-forward from the prior Unreleased: "How to validate a
+  manuscript" how-to (closes #81), "How to use quartobot in a
+  Quarto book" (closes #79), "How to resolve a single citation"
+  (closes #80), "How to use quartobot in a Jupyter notebook
+  manuscript" (closes #77), "First manuscript in 15 minutes"
+  tutorial (closes #82), "MCP + Claude Desktop" tutorial (closes
+  #83), "How to use quartobot in a Quarto website" (closes #78),
+  "Shell-tool agents grounding citations" tutorial (closes #84).
 
 ### Changed
 
+- **`quartobot use github-ci` defaults to the lean pipeline.**
+  Latest deploy at `/`, PR preview at `/pr/<n>/`, generated
+  `/versions/` page, sticky PR comment. No per-commit `/v/<sha>/`
+  permalinks, no HTML version banner, no snapshot retention by
+  default. The v0.1/v0.2 manubot-pattern pipeline (per-commit
+  permalinks + banner + retention) moves behind the opt-in
+  `--with-versioned-snapshots` flag. Existing repos pinning to
+  `render-reusable.yml@main` are unaffected; the new default writes
+  a `render.yml` that calls `render-reusable-lean.yml`. Migration:
+  regenerate your workflow with `quartobot use github-ci` (lean) or
+  add `--with-versioned-snapshots` (v0.1 behavior). Part of #118.
 - `quartobot init` now scaffolds only the citation-pipeline pieces
   (`_quarto.yml` pre-render line + `bibliography:` list,
   `references.bib` seed, `.gitignore` augment). The GitHub Actions
-  render workflow, version banner, and PR-preview cleanup moved to a
-  new `quartobot use github-ci` command. `use` is the parking lot for
-  opt-in capabilities, R `usethis`-style. If you ran `init` before
-  v0.3, run `quartobot use github-ci` after to get what it used to do.
-  Closes #87.
+  render workflow, version banner, and PR-preview cleanup moved to
+  the `quartobot use github-ci` command. `use` is the parking lot
+  for opt-in capabilities, R `usethis`-style. If you ran `init`
+  before v0.3, run `quartobot use github-ci` after to get what it
+  used to do. Closes #87.
+- Landing-page Layer 4 reframed for the lean default. Now leads
+  with "Citations resolve in CI; reviewers preview in the PR" and
+  surfaces per-commit permalinks as opt-in. The reviewer-UX callout
+  is preserved.
+- Template (`template/`) wired for the lean pipeline. Banner files
+  deleted; `_quarto.yml` drops the `include-before-body` line;
+  `render.yml` points at the lean reusable workflow.
+
+### Fixed
+
+- Coming-from and troubleshooting pages use `../page/` (not
+  `./page/`) for sibling-page references. Starlight resolves
+  `./foo/` from `coming-from.md` as `/coming-from/foo/`, which
+  404s.
+
+### Architecture
+
+- New `quartobot.versions` module — pure-function `/versions/` page
+  generation. Composes with `quartobot.snapshots`'s `Inventory`. No
+  shelling out, no network. The state file (`versions/state.json`)
+  is rebuildable from gh-pages contents on the next render if it
+  gets corrupted.
+- New `quartobot.reconcile` module — small brace-counter BibTeX
+  parser (no `bibtexparser` dependency) sufficient for key
+  extraction and block-level mutation. Three resolution functions
+  share a `ReconcileOutcome` shape carrying decisions and per-file
+  changes. Manual picker takes a `prompt` callable for
+  testability; the CLI binds it to stdin.
+- `pyproject.toml` and `__init__.py` bumped to `0.3.0`.
 
 ## v0.2.0 — 2026-05-16
 
