@@ -191,31 +191,41 @@ bibliography:
 <div class="feature-band feature-band--reverse">
   <div class="feature-band__body">
     <p class="feature-band__layer">Layer 4 · the publication</p>
-    <h2 class="feature-band__title">Every commit, a reviewable manuscript artifact</h2>
-    <p class="feature-band__audience">If you want per-commit permalinks, PR previews, and "manuscript-as-software" CI.</p>
+    <h2 class="feature-band__title">Citations resolve in CI; reviewers preview in the PR</h2>
+    <p class="feature-band__audience">If you publish a manuscript to GitHub Pages and want PR previews + a versions page out of the box.</p>
     <p>
-      `quartobot use github-ci` scaffolds the render-and-deploy
-      workflow. Each push to your repo renders the manuscript and
-      lands it on GitHub Pages; each commit gets an immutable
-      `/v/<sha>/` permalink alongside the latest; each PR gets a
-      sticky preview-render comment. Reviewers see what merges
-      before it merges.
+      `quartobot use github-ci` scaffolds a thin GitHub Actions
+      workflow that does three things: installs Quarto and quartobot
+      on the runner so the citation pre-render hook works in CI,
+      renders the manuscript on every push, and posts a sticky PR
+      comment with the preview URL on every PR. A generated
+      `/versions/` page lists tagged releases and open PR previews.
+      No banner injection, no per-commit deploys by default — just
+      the latest at `/`, PR previews at `/pr/<n>/`, and the versions
+      page as the discoverability surface.
     </p>
     <div class="feature-band__callout">
       <strong>Reviewers see exactly what your branch renders to.</strong>
       The sticky PR comment links to a live preview of the
-      manuscript — no local checkout, no "but it works on my
-      machine," no version drift between what reviewers read and
-      what merges. The `/v/<sha>/` permalink survives forever, so
-      anyone can cite a specific version of the paper.
+      manuscript at <code>/pr/&lt;n&gt;/</code> — no local checkout,
+      no "but it works on my machine," no version drift between what
+      reviewers read and what merges.
     </div>
+    <p>
+      For the full manubot-style pattern — per-commit
+      <code>/v/&lt;sha&gt;/</code> permalinks, snapshot retention,
+      milestone-as-git-tag — opt in with
+      `quartobot use github-ci --with-versioned-snapshots`. Adds the
+      permalink deploy layer on top of the lean default. Useful when
+      preprint reviewers need to cite a specific commit's rendering.
+    </p>
     <p class="feature-band__cta">
       <a href="./first-manuscript/#7-add-the-publish-on-every-commit-ci">First manuscript, step 7 →</a>
     </p>
     <p class="feature-band__stop">
-      Done — every commit gets a permanent URL, every PR gets a
-      preview. Skip this layer entirely if you already have CI or
-      use `quarto publish`.
+      Done — your manuscript publishes on every push, PRs get
+      previews. Skip this layer entirely if you already have CI or
+      use `quarto publish` directly.
     </p>
   </div>
   <div class="feature-band__code">
@@ -225,9 +235,9 @@ quartobot use github-ci
 # scaffolds:
 #   .github/workflows/render.yml
 #   .github/workflows/pr-closed.yml
-#   _version-banner.html
-# then prints a YAML snippet to paste
-# into _quarto.yml for the banner include
+# uses the lean reusable workflow.
+# add --with-versioned-snapshots for the
+# per-commit /v/<sha>/ permalink layer.
 ```
 
   </div>
