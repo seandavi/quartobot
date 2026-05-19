@@ -281,7 +281,7 @@ def test_render_html_lists_latest_sha() -> None:
     snap = Snapshot(sha=SHA_A, size_bytes=100, mtime=1_780_000_000.0)
     state = derive_state(_inv((snap,)), latest_sha=SHA_A, now=FIXED_NOW)
     out = render_html(state)
-    assert f'commit {SHA_A[:7]}' in out
+    assert f"commit {SHA_A[:7]}" in out
 
 
 def test_render_html_separates_tagged_from_untagged() -> None:

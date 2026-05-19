@@ -217,9 +217,7 @@ def derive_state(
         if sha_meta and sha_meta.date:
             date_str = sha_meta.date
         else:
-            date_str = (
-                datetime.fromtimestamp(snap.mtime, tz=timezone.utc).date().isoformat()
-            )
+            date_str = datetime.fromtimestamp(snap.mtime, tz=timezone.utc).date().isoformat()
         entries.append(
             VersionEntry(
                 sha=snap.sha,
@@ -415,10 +413,7 @@ def render_html(state: VersionState, *, project_title: str = "manuscript") -> st
     parts.append("<h2>Latest</h2>")
     if state.latest_sha:
         short = html.escape(state.latest_sha[:SHORT_SHA_LEN])
-        parts.append(
-            f'<p><a href="/">latest</a> '
-            f'<span class="sha">(commit {short})</span></p>'
-        )
+        parts.append(f'<p><a href="/">latest</a> <span class="sha">(commit {short})</span></p>')
     else:
         parts.append('<p class="empty">No deploys yet.</p>')
 
@@ -451,7 +446,7 @@ def render_html(state: VersionState, *, project_title: str = "manuscript") -> st
 
     parts.append("<footer>")
     parts.append(
-        f'<p>Generated {html.escape(state.generated_at)} by '
+        f"<p>Generated {html.escape(state.generated_at)} by "
         f'<a href="https://quartobot.github.io/quartobot/">quartobot</a>.</p>'
     )
     parts.append("</footer>")
@@ -463,19 +458,11 @@ def render_html(state: VersionState, *, project_title: str = "manuscript") -> st
 
 def _render_entry(e: VersionEntry) -> str:
     """Render a single :class:`VersionEntry` as an ``<li>``."""
-    tag = (
-        f'<span class="tag">{html.escape(e.tag)}</span>'
-        if e.tag
-        else ""
-    )
-    title = (
-        f'<span class="title">{html.escape(e.title)}</span>'
-        if e.title
-        else ""
-    )
+    tag = f'<span class="tag">{html.escape(e.tag)}</span>' if e.tag else ""
+    title = f'<span class="title">{html.escape(e.title)}</span>' if e.title else ""
     return (
         f"<li>"
-        f'{tag}'
+        f"{tag}"
         f'<a class="sha" href="/v/{html.escape(e.sha)}/">{html.escape(e.short_sha)}</a>'
         f'<span class="date">{html.escape(e.date)}</span>'
         f"{title}"
@@ -485,17 +472,13 @@ def _render_entry(e: VersionEntry) -> str:
 
 def _render_pr(pr: PRPreview) -> str:
     """Render a single :class:`PRPreview` as an ``<li>``."""
-    date_span = (
-        f'<span class="date">{html.escape(pr.date)}</span>'
-        if pr.date
-        else ""
-    )
+    date_span = f'<span class="date">{html.escape(pr.date)}</span>' if pr.date else ""
     return (
         f"<li>"
         f'<span class="pr-number">PR #{pr.number}</span> '
         f'<a href="/pr/{pr.number}/">{html.escape(pr.title)}</a> '
         f'<span class="pr-branch">{html.escape(pr.branch)}</span>'
-        f'{date_span}'
+        f"{date_span}"
         f"</li>"
     )
 
