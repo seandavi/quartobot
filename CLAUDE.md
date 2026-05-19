@@ -37,6 +37,10 @@ From `CONTRIBUTING.md`:
 - CI must pass before merge (no CI exists yet; this kicks in once the template lands).
 - Discuss design changes in an issue first — JOSS paper review will want the paper trail.
 
+## Releasing
+
+Before tagging `vX.Y.Z`, walk [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). It's grounded in actual failure modes from prior releases — ruff format vs lint, doc URL sweeps after ownership changes, PyPI trusted-publisher mismatches, the `pypi` environment review gate, `astro.config.mjs` `site:` field drift. Each item names the release that taught us the rule. Update the checklist when a new failure mode appears.
+
 ## What this is
 
 Two artifacts ship together:
