@@ -132,7 +132,7 @@ on the markdown/git on-ramp).
 ## v0.2.0 — 2026-05-16
 
 The accumulated work since v0.1.0: a real docs site under
-`quartobot.github.io/quartobot/`, an MCP server for agentic authoring,
+`seandavi.github.io/quartobot/`, an MCP server for agentic authoring,
 snapshot retention for `gh-pages`, Jupyter notebook scanning, the org
 move to `quartobot/`, and a pile of correctness fixes around citation
 keys, the validate gate, and the render-CI defaults.
@@ -157,7 +157,7 @@ keys, the validate gate, and the render-CI defaults.
   for the per-commit permalink directories on `gh-pages`. Ships with
   a composite action wired into the reusable render workflow so old
   snapshots are pruned automatically.
-- Starlight docs site at `quartobot.github.io/quartobot/`. CI gates
+- Starlight docs site at `seandavi.github.io/quartobot/`. CI gates
   on a built-site link-check via `linkinator` so internal references
   don't ship broken.
 - `scan` reads Jupyter notebooks (`.ipynb`) — markdown cells are
@@ -170,7 +170,7 @@ keys, the validate gate, and the render-CI defaults.
 ### Changed
 
 - Repo moved to the `quartobot` GitHub org; docs Pages URL is now
-  `quartobot.github.io/quartobot/`. Closes #55, #62.
+  `seandavi.github.io/quartobot/`. Closes #55, #62.
 - `quartobot validate` no longer fails on a key cited several times in
   the same file — only cross-file duplicates count, and the failure
   message reports the actual file count per key. `quartobot scan`
@@ -208,7 +208,7 @@ keys, the validate gate, and the render-CI defaults.
   directly. See `docs/citation-pipeline.md` for the rationale.
 - **Breaking:** `_extensions/seandavi/quarto-manubot-cite/` removed.
   There is no extension to `quarto add`. The on-ramp is
-  `uv tool install git+https://github.com/quartobot/quartobot`.
+  `uv tool install git+https://github.com/seandavi/quartobot`.
 - `examples/extension-minimal/` renamed to `examples/minimal/`.
 - `quartobot validate`: dropped `extension installed`,
   `manubot-bibliography-cache`, `manubot-output-bibliography` checks;
@@ -222,7 +222,7 @@ keys, the validate gate, and the render-CI defaults.
 ## v0.1.0 — 2026-05-14
 
 First useful release. Installs cleanly from git
-(`uv tool install git+https://github.com/quartobot/quartobot`) and
+(`uv tool install git+https://github.com/seandavi/quartobot`) and
 will publish to PyPI on this tag once the trusted-publisher setup
 on the PyPI side is complete.
 
@@ -240,7 +240,7 @@ on the PyPI side is complete.
 
 ### Quarto extension
 
-- `quarto add quartobot/quartobot@v0.1.0` installs `quarto-manubot-cite`,
+- `quarto add seandavi/quartobot@v0.1.0` installs `quarto-manubot-cite`,
   wiring `pandoc-manubot-cite` as a pandoc filter.
 
 ### CI building blocks

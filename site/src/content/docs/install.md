@@ -20,7 +20,7 @@ uv tool install quartobot
 For unreleased main, install from git instead:
 
 ```bash
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 ```
 
 This puts `quartobot` on your user `PATH` (typically `~/.local/bin` or
@@ -35,7 +35,7 @@ need to maintain a virtualenv yourself.
 Pin a specific ref:
 
 ```bash
-uv tool install git+https://github.com/quartobot/quartobot@<branch-or-tag-or-sha>
+uv tool install git+https://github.com/seandavi/quartobot@<branch-or-tag-or-sha>
 ```
 
 Upgrade later:
@@ -57,7 +57,7 @@ take on the uv toolchain, `pipx` installs `quartobot` as a CLI on your
 user `PATH` the same way:
 
 ```bash
-pipx install git+https://github.com/quartobot/quartobot
+pipx install git+https://github.com/seandavi/quartobot
 ```
 
 The trade-off: `pipx` doesn't manage the underlying Python install, so
@@ -72,8 +72,8 @@ it out, scripted one-off jobs, or pinning a specific version in CI
 without polluting the host install.
 
 ```bash
-uvx --from git+https://github.com/quartobot/quartobot quartobot --help
-uvx --from git+https://github.com/quartobot/quartobot quartobot resolve --from-scan .
+uvx --from git+https://github.com/seandavi/quartobot quartobot --help
+uvx --from git+https://github.com/seandavi/quartobot quartobot resolve --from-scan .
 ```
 
 The `--from` flag is required because the package name and the command
@@ -100,7 +100,7 @@ errors). Use `uv tool install quartobot` instead, or
 Clone and install editable:
 
 ```bash
-git clone https://github.com/quartobot/quartobot.git
+git clone https://github.com/seandavi/quartobot.git
 cd quartobot
 uv pip install -e .
 ```

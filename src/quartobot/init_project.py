@@ -275,7 +275,7 @@ def format_outcome(outcome: InitOutcome, *, project: Path) -> str:
         lines.append(outcome.manual_merge_snippet)
     lines.append("Next steps:")
     lines.append("  1. Confirm `quartobot` is on PATH: `quartobot --version`")
-    lines.append("     (install with `uv tool install git+https://github.com/quartobot/quartobot`)")
+    lines.append("     (install with `uv tool install git+https://github.com/seandavi/quartobot`)")
     lines.append("  2. Add citations to your prose: @doi:..., @pmid:..., etc.")
     lines.append("  3. quarto render")
     lines.append("")

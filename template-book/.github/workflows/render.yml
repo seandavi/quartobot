@@ -4,12 +4,12 @@
 # reusable workflow. Bug fixes flow here through the version pin.
 #
 # To customize the pipeline, override inputs below. See:
-#   https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml
+#   https://github.com/seandavi/quartobot/blob/main/.github/workflows/render-reusable.yml
 # for the full list of inputs.
 #
 # For deeper customization (forking the workflow itself), the
 # `quartobot detach` CLI command — tracked at
-# https://github.com/quartobot/quartobot/issues/25 — will copy the full
+# https://github.com/seandavi/quartobot/issues/25 — will copy the full
 # pipeline out so you can edit it freely.
 
 name: Render book
@@ -23,7 +23,7 @@ on:
 
 jobs:
   render:
-    uses: quartobot/quartobot/.github/workflows/render-reusable.yml@main
+    uses: seandavi/quartobot/.github/workflows/render-reusable.yml@main
     permissions:
       contents: write
       pull-requests: write

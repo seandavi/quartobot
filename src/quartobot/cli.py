@@ -250,7 +250,7 @@ def mcp_serve() -> None:
 
         uv tool install 'quartobot[mcp]'
 
-    See https://quartobot.github.io/quartobot/mcp/ for client setup.
+    See https://seandavi.github.io/quartobot/mcp/ for client setup.
     """
     try:
         from quartobot.mcp import run as run_mcp_server

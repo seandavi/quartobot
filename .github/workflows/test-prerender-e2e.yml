@@ -4,7 +4,7 @@ name: End-to-end pre-render hook
 # docs/citation-pipeline.md end-to-end:
 #
 #   1. Install quartobot from this checkout (mirrors what users get
-#      from `uv tool install git+https://github.com/quartobot/quartobot`).
+#      from `uv tool install git+https://github.com/seandavi/quartobot`).
 #   2. Install manubot at the system Python WITHOUT the pandoc-3.x
 #      sed patch that the filter-based CI applies. Under the pre-render
 #      hook, `manubot.pandoc.util` is unreachable from quartobot's call
@@ -59,7 +59,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Install quartobot as a tool
-        # Mirrors `uv tool install git+https://github.com/quartobot/quartobot`
+        # Mirrors `uv tool install git+https://github.com/seandavi/quartobot`
         # for end users, but builds from this checkout so the test runs
         # against the PR's HEAD. The tool install puts `quartobot` on
         # PATH for the whole job — Quarto's pre-render subprocess will

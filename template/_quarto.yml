@@ -3,7 +3,7 @@ project:
   # `type: default` matches the Venice working reference. Quarto's first-party
   # `type: manuscript` is the natural fit here but writes to `_manuscript/`
   # which would need the staging/deploy step in render.yml rewritten. Tracked
-  # in https://github.com/quartobot/quartobot/issues/3.
+  # in https://github.com/seandavi/quartobot/issues/3.
 
   # Resolves @doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmcid:,
   # and bare DOIs before pandoc runs. The resolved CSL JSON lands in

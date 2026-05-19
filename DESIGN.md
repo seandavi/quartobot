@@ -103,7 +103,7 @@ The CLI is the load-bearing artifact. Four commands today:
   wired in, seeds `references.bib`, drops in the version-banner
   template, adds a ten-line workflow.
 
-Install: `uv tool install git+https://github.com/quartobot/quartobot`
+Install: `uv tool install git+https://github.com/seandavi/quartobot`
 (or `uv pip install -e .` from a clone for repo dev). ~1k lines of
 Python plus tests.
 
@@ -121,7 +121,7 @@ A GitHub template that combines:
 - A README walking a new author through the three steps from
   "use this template" to "click the rendered URL."
 
-Adoption is `gh repo create my-paper --template quartobot/quartobot-manuscript`.
+Adoption is `gh repo create my-paper --template seandavi/quartobot-manuscript`.
 
 A book variant of the same template (`template-book/` in this repo)
 exercises the pattern on Quarto's book project type. Posters, slides,
@@ -138,7 +138,7 @@ only the project type differs.
 | Resolver invocation | Pre-render hook | Quarto's own docs recommend pre-render scripts for "produce inputs the standard pipeline consumes" and Lua filters for AST work; they explicitly steer away from external-process filters like `pandoc-manubot-cite`. The filter shape v0.1 originally shipped caused two real UX gotchas (pandoc 3.x version check, PATH requirement) that the pre-render shape makes structurally unreachable. Settled 2026-05-14 after a live end-to-end walkthrough. See [`docs/citation-pipeline.md`](docs/citation-pipeline.md). |
 | Caching | The resolved `references.json` IS the cache | `quartobot resolve` is idempotent against its own output — re-running with an existing `references.json` skips the network for keys already present. One file, gitignored, regenerated on demand. |
 | Permalink format | `/v/<full-sha>/` per the manubot convention | Long-form SHA so the snapshot URL contains a verifiable identifier. Short SHA shown to humans in the banner. |
-| Snapshot retention | **Explicit, configurable policy** (`quartobot.snapshots` in `_quarto.yml`); defaults: keep latest, keep tagged commits, keep last 10 untagged, redirect older to `/`, 800 MB budget, fail on over-budget | Manubot inherits append-only `/v/<sha>/` accumulation as an implementation accident of its `ghp-import` push pattern. Quartobot uses `peaceiris/actions-gh-pages keep_files: true`, which doesn't force that constraint — so retention can be a first-class feature, not silent growth. The 800 MB ceiling fails the build before GitHub's 1 GB Pages soft limit triggers admin emails. Tagged commits get the "this version matters" lifetime guarantee; everything else cycles. Pruned snapshots become ~1 KB meta-refresh stubs so externally-cited URLs do not 404. See [issue #58](https://github.com/quartobot/quartobot/issues/58) for the full rationale and contrast with Manubot. |
+| Snapshot retention | **Explicit, configurable policy** (`quartobot.snapshots` in `_quarto.yml`); defaults: keep latest, keep tagged commits, keep last 10 untagged, redirect older to `/`, 800 MB budget, fail on over-budget | Manubot inherits append-only `/v/<sha>/` accumulation as an implementation accident of its `ghp-import` push pattern. Quartobot uses `peaceiris/actions-gh-pages keep_files: true`, which doesn't force that constraint — so retention can be a first-class feature, not silent growth. The 800 MB ceiling fails the build before GitHub's 1 GB Pages soft limit triggers admin emails. Tagged commits get the "this version matters" lifetime guarantee; everything else cycles. Pruned snapshots become ~1 KB meta-refresh stubs so externally-cited URLs do not 404. See [issue #58](https://github.com/seandavi/quartobot/issues/58) for the full rationale and contrast with Manubot. |
 | Version banner placement | Title-adjacent callout in HTML only; PDF/DOCX skip via `content-visible when-format="html"` | Quarto's right-side TOC is generated from headings; injecting arbitrary content there requires templates we don't want to maintain. |
 | PR preview links | Sticky PR comment from `marocchino/sticky-pull-request-comment` | The HTML doesn't need a PR-aware banner — the comment is the right surface. Keeps the HTML simple. |
 | License | MIT | OSI-approved, matches Quarto and manubot, JOSS-friendly. |
@@ -201,7 +201,7 @@ our baseline:
 **Annotation, comments, search**
 
 - **Hypothes.is** annotations are a single config line:
-  `format.html.comments.hypothesis: true`. (See [#6](https://github.com/quartobot/quartobot/issues/6)
+  `format.html.comments.hypothesis: true`. (See [#6](https://github.com/seandavi/quartobot/issues/6)
   for why this dropped the iframe-shell idea.)
 - Full-text search built-in for book and website project types.
 

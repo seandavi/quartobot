@@ -33,7 +33,7 @@ you haven't yet — it's the context for the choices below.
 ## Step 1 — Install the quartobot CLI
 
 ```bash
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 quartobot --version
 ```
 
@@ -222,7 +222,7 @@ git rm .github/workflows/manubot.yaml 2>/dev/null
 
 `quartobot init` already wrote `.github/workflows/render.yml` — a
 ten-line caller of the upstream
-[reusable workflow](https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml).
+[reusable workflow](https://github.com/seandavi/quartobot/blob/main/.github/workflows/render-reusable.yml).
 That workflow handles render → permalink staging → gh-pages deploy →
 sticky PR comment, the same surface manubot's `build/build.sh` +
 `build/webpage.sh` covered.

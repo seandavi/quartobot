@@ -1,8 +1,8 @@
 # quartobot
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/quartobot/quartobot/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/seandavi/quartobot/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/quartobot.svg)](https://pypi.org/project/quartobot/)
-[![Docs](https://img.shields.io/badge/docs-quartobot.github.io-blue.svg)](https://quartobot.github.io/quartobot/)
+[![Docs](https://img.shields.io/badge/docs-live-blue.svg)](https://seandavi.github.io/quartobot/)
 
 Citation resolution and manuscript-as-software CI for Quarto.
 
@@ -13,10 +13,10 @@ uv tool install quartobot
 Or from git for the unreleased main:
 
 ```bash
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 ```
 
-Documentation: [quartobot.github.io/quartobot](https://quartobot.github.io/quartobot/).
+Documentation: [seandavi.github.io/quartobot](https://seandavi.github.io/quartobot/).
 
 ## What it does
 
@@ -97,17 +97,17 @@ working reference the template is being lifted from.
 
 ## See also
 
-- [Documentation site](https://quartobot.github.io/quartobot/) — install, CLI reference, MCP setup, templates, migration guides
-- [Design](https://github.com/quartobot/quartobot/blob/main/DESIGN.md)
-- [Citation pipeline](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md) — why a pre-render hook, not a pandoc filter
-- [Prior art](https://github.com/quartobot/quartobot/blob/main/docs/prior-art.md)
-- [Contributing](https://github.com/quartobot/quartobot/blob/main/CONTRIBUTING.md)
-- [Code of conduct](https://github.com/quartobot/quartobot/blob/main/CODE_OF_CONDUCT.md)
-- [Changelog](https://github.com/quartobot/quartobot/blob/main/CHANGELOG.md)
+- [Documentation site](https://seandavi.github.io/quartobot/) — install, CLI reference, MCP setup, templates, migration guides
+- [Design](https://github.com/seandavi/quartobot/blob/main/DESIGN.md)
+- [Citation pipeline](https://github.com/seandavi/quartobot/blob/main/docs/citation-pipeline.md) — why a pre-render hook, not a pandoc filter
+- [Prior art](https://github.com/seandavi/quartobot/blob/main/docs/prior-art.md)
+- [Contributing](https://github.com/seandavi/quartobot/blob/main/CONTRIBUTING.md)
+- [Code of conduct](https://github.com/seandavi/quartobot/blob/main/CODE_OF_CONDUCT.md)
+- [Changelog](https://github.com/seandavi/quartobot/blob/main/CHANGELOG.md)
 
 ## License
 
-[MIT](https://github.com/quartobot/quartobot/blob/main/LICENSE).
+[MIT](https://github.com/seandavi/quartobot/blob/main/LICENSE).
 
 ---
 

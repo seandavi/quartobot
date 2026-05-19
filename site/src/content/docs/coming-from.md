@@ -167,7 +167,7 @@ appears in both `references.bib` (hand-curated) and `references.json`
 (auto-resolved), pandoc-citeproc's behavior is its default later-wins
 — which is the sort of silent precedence that produces a wrong fact
 in your rendered output without obvious warning. The
-[`quartobot reconcile`](https://github.com/quartobot/quartobot/issues/122)
+[`quartobot reconcile`](https://github.com/seandavi/quartobot/issues/122)
 command is designed to force an explicit choice (accept-bib,
 accept-json, or interactive picker per collision) and is the planned
 fix for this. Until that ships, the practical workaround is: if you
@@ -181,7 +181,7 @@ That feature gives you the manuscript-shaped project layout
 (JATS export, notebook embedding, etc.); quartobot adds citation
 resolution on top. The two compose: declare `type: manuscript` in
 `_quarto.yml` *and* add quartobot's pre-render hook. There's an
-[open design question](https://github.com/quartobot/quartobot/issues/3)
+[open design question](https://github.com/seandavi/quartobot/issues/3)
 on whether to extend or fork the first-party template for new-project
 scaffolds; for adoption-into-an-existing-Quarto-project, the two
 layers don't interfere.

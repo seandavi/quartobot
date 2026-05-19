@@ -9,7 +9,7 @@ populate the bibliography before pandoc starts. `scan`, `validate`,
 `init`, and `use` round out the surface for CI-lint and scaffolding.
 
 ```bash
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 ```
 
 `quartobot` depends on `manubot` as a Python library. See
@@ -183,7 +183,7 @@ Project type: manuscript
 
 Next steps:
   1. Confirm `quartobot` is on PATH: `quartobot --version`
-     (install with `uv tool install git+https://github.com/quartobot/quartobot`)
+     (install with `uv tool install git+https://github.com/seandavi/quartobot`)
   2. Add citations to your prose: @doi:..., @pmid:..., etc.
   3. quarto render
 

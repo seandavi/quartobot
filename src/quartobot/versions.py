@@ -447,7 +447,7 @@ def render_html(state: VersionState, *, project_title: str = "manuscript") -> st
     parts.append("<footer>")
     parts.append(
         f"<p>Generated {html.escape(state.generated_at)} by "
-        f'<a href="https://quartobot.github.io/quartobot/">quartobot</a>.</p>'
+        f'<a href="https://seandavi.github.io/quartobot/">quartobot</a>.</p>'
     )
     parts.append("</footer>")
     parts.append("</main>")

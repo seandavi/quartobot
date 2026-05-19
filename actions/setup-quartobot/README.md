@@ -5,11 +5,11 @@ that uses the `quartobot resolve` pre-render hook.
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: quartobot/quartobot/actions/setup-quartobot@v0.1
+- uses: seandavi/quartobot/actions/setup-quartobot@v0.1
   with:
     project: "."          # where _quarto.yml lives (default: .)
     python-version: "3.12"
-    quartobot-spec: "git+https://github.com/quartobot/quartobot"
+    quartobot-spec: "git+https://github.com/seandavi/quartobot"
     quarto-version: "release"  # default; latest stable
     tinytex: "true"       # set "false" to skip TeX install
 ```

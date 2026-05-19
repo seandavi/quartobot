@@ -6,7 +6,7 @@ Composite action: applies the project's snapshot retention policy to the
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }   # tags + history; the action needs both
-- uses: quartobot/quartobot/actions/prune-snapshots@v0.1
+- uses: seandavi/quartobot/actions/prune-snapshots@v0.1
   with:
     project: "."             # where _quarto.yml lives
     mode: "apply"            # "apply" (push prune) or "echo" (read-only)

@@ -1,13 +1,13 @@
 # quartobot-book
 
-Book template for the [quartobot](https://github.com/quartobot/quartobot)
+Book template for the [quartobot](https://github.com/seandavi/quartobot)
 pattern: Quarto book project + the `quartobot resolve` pre-render hook
 + version banner + the ten-line workflow caller.
 
-> **Status:** scaffold from [quartobot/quartobot](https://github.com/quartobot/quartobot).
+> **Status:** scaffold from [seandavi/quartobot](https://github.com/seandavi/quartobot).
 > Not yet available via `gh repo create --template`. Once promoted to its
 > own template repo, the install path becomes
-> `gh repo create my-book --template quartobot/quartobot-book`.
+> `gh repo create my-book --template seandavi/quartobot-book`.
 
 ## What you get
 
@@ -28,11 +28,11 @@ pattern: Quarto book project + the `quartobot resolve` pre-render hook
 ## Quick start
 
 ```bash
-gh repo create my-book --template quartobot/quartobot-book   # once available
+gh repo create my-book --template seandavi/quartobot-book   # once available
 cd my-book
 
 # Local render needs Quarto and quartobot on PATH.
-uv tool install git+https://github.com/quartobot/quartobot
+uv tool install git+https://github.com/seandavi/quartobot
 quarto render
 open _book/index.html
 
@@ -154,10 +154,10 @@ git push origin chapter-3-complete
 behavior, you have three options:
 
 1. **Override inputs** in the `with:` block — see
-   [the reusable workflow](https://github.com/quartobot/quartobot/blob/main/.github/workflows/render-reusable.yml)
+   [the reusable workflow](https://github.com/seandavi/quartobot/blob/main/.github/workflows/render-reusable.yml)
    for the full list (Python version, Quarto version, banner paths, etc.).
 2. **Detach** with `quartobot detach` (once shipped — tracked at
-   [#25](https://github.com/quartobot/quartobot/issues/25)): copy the
+   [#25](https://github.com/seandavi/quartobot/issues/25)): copy the
    whole pipeline locally so you can edit it freely. You won't get
    upstream fixes after detaching.
 3. **Manual fallback** until `detach` ships: copy
@@ -166,12 +166,12 @@ behavior, you have three options:
 
 ## See also
 
-- [The manuscript template](https://github.com/quartobot/quartobot/tree/main/template) — same pattern, single-document layout.
-- [quartobot DESIGN doc](https://github.com/quartobot/quartobot/blob/main/DESIGN.md).
-- [Citation pipeline](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md) — why pre-render hook, not a pandoc filter.
+- [The manuscript template](https://github.com/seandavi/quartobot/tree/main/template) — same pattern, single-document layout.
+- [quartobot DESIGN doc](https://github.com/seandavi/quartobot/blob/main/DESIGN.md).
+- [Citation pipeline](https://github.com/seandavi/quartobot/blob/main/docs/citation-pipeline.md) — why pre-render hook, not a pandoc filter.
 - [Working example: Venice 2026 manuscript](https://github.com/seandavi/2026-venice-spatial-hackathon-manuscript) — manuscript-shape reference of the CI half.
 - [manubot](https://github.com/manubot/manubot) — the upstream Python library that does the citation resolution.
 
 ## License
 
-[MIT](https://github.com/quartobot/quartobot/blob/main/LICENSE).
+[MIT](https://github.com/seandavi/quartobot/blob/main/LICENSE).

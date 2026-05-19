@@ -56,10 +56,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/quartobot/quartobot"
-Documentation = "https://quartobot.github.io/quartobot"
-Issues = "https://github.com/quartobot/quartobot/issues"
-Source = "https://github.com/quartobot/quartobot"
+Homepage = "https://github.com/seandavi/quartobot"
+Documentation = "https://seandavi.github.io/quartobot"
+Issues = "https://github.com/seandavi/quartobot/issues"
+Source = "https://github.com/seandavi/quartobot"
 
 [project.scripts]
 quartobot = "quartobot.cli:main"
