@@ -29,6 +29,7 @@ export default defineConfig({
       sidebar: [
         { label: "Home", link: "/" },
         { label: "Install", link: "/install/" },
+        { label: "Coming from…", link: "/coming-from/" },
         {
           label: "Tutorials",
           items: [
