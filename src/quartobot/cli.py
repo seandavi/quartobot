@@ -480,9 +480,7 @@ def snapshots_apply(
     "json_path_opt",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
     default=None,
-    help=(
-        "Path to references.json. Defaults to `<project>/references.json`."
-    ),
+    help=("Path to references.json. Defaults to `<project>/references.json`."),
 )
 @click.option(
     "--accept-bibtex",
@@ -534,9 +532,7 @@ def reconcile(
     """
     modes_chosen = [mode_accept_bibtex, mode_accept_json, mode_manual]
     if sum(modes_chosen) != 1:
-        raise click.UsageError(
-            "pass exactly one of --accept-bibtex, --accept-json, --manual"
-        )
+        raise click.UsageError("pass exactly one of --accept-bibtex, --accept-json, --manual")
 
     bib_path = bib_path_opt or (project / "references.bib")
     json_path = json_path_opt or (project / "references.json")

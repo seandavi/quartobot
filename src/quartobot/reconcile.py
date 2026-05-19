@@ -209,9 +209,7 @@ def parse_json(text: str) -> list[dict[str, Any]]:
     """
     data = json.loads(text)
     if not isinstance(data, list):
-        raise ValueError(
-            f"expected references.json to be a JSON array; got {type(data).__name__}"
-        )
+        raise ValueError(f"expected references.json to be a JSON array; got {type(data).__name__}")
     return data
 
 
@@ -431,9 +429,7 @@ def manual_picker(
         elif answer == "q":
             break
         else:
-            raise ValueError(
-                f"manual picker got unexpected response {answer!r}; expected b/j/s/q"
-            )
+            raise ValueError(f"manual picker got unexpected response {answer!r}; expected b/j/s/q")
 
     bib_change: FileChange | None = None
     json_change: FileChange | None = None

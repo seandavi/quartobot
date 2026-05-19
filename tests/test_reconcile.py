@@ -208,9 +208,7 @@ def test_accept_bibtex_drops_from_json_writes_backup(tmp_path: Path) -> None:
 def test_accept_bibtex_dry_run_writes_nothing(tmp_path: Path) -> None:
     bib_path, json_path = _setup_project(tmp_path)
     collisions = find_collisions(parse_bib(SIMPLE_BIB), SIMPLE_JSON)
-    outcome = accept_bibtex(
-        bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW
-    )
+    outcome = accept_bibtex(bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW)
 
     assert outcome.dry_run is True
     assert outcome.json_change is not None
@@ -265,9 +263,7 @@ def test_accept_json_drops_from_bib_writes_backup(tmp_path: Path) -> None:
 def test_accept_json_dry_run_writes_nothing(tmp_path: Path) -> None:
     bib_path, json_path = _setup_project(tmp_path)
     collisions = find_collisions(parse_bib(SIMPLE_BIB), SIMPLE_JSON)
-    outcome = accept_json(
-        bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW
-    )
+    outcome = accept_json(bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW)
     assert outcome.dry_run is True
     assert bib_path.read_text() == SIMPLE_BIB
     assert not (tmp_path / f"references.bib.{BACKUP_SUFFIX}").exists()
@@ -425,9 +421,7 @@ def test_format_outcome_names_each_touched_file(tmp_path: Path) -> None:
 def test_format_outcome_dry_run_marks_would(tmp_path: Path) -> None:
     bib_path, json_path = _setup_project(tmp_path)
     collisions = find_collisions(parse_bib(SIMPLE_BIB), SIMPLE_JSON)
-    outcome = accept_bibtex(
-        bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW
-    )
+    outcome = accept_bibtex(bib_path, json_path, collisions, dry_run=True, now=FIXED_NOW)
     out = format_outcome(outcome)
     assert "Would reconcile 1" in out
     assert "Would modify" in out
