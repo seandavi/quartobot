@@ -138,28 +138,45 @@ def _standard_id_from_note(note: object) -> str | None:
     return None
 
 
+def _pandoc_invocation() -> list[str]:
+    """Resolve the command prefix used to invoke pandoc.
+
+    Prefers a system ``pandoc`` on PATH (lower startup overhead). Falls
+    back to ``quarto pandoc``, which delegates to Quarto's bundled
+    pandoc — useful in CI where Quarto is installed but its bundled
+    binary isn't exposed on PATH.
+
+    Raises ``RuntimeError`` if neither is available.
+    """
+    pandoc = shutil.which("pandoc")
+    if pandoc is not None:
+        return [pandoc]
+    quarto = shutil.which("quarto")
+    if quarto is not None:
+        return [quarto, "pandoc"]
+    raise RuntimeError(
+        "neither `pandoc` nor `quarto` was found on PATH. quartobot "
+        "resolve needs pandoc to convert CSL JSON to BibLaTeX. Install "
+        "Quarto (which bundles pandoc) or pandoc directly: "
+        "https://pandoc.org/installing.html"
+    )
+
+
 def _csljson_to_biblatex(csl_json_text: str) -> str:
-    """Convert CSL JSON text to BibLaTeX via ``pandoc``.
+    """Convert CSL JSON text to BibLaTeX via pandoc.
 
     Pandoc converts CSL JSON to BibLaTeX cleanly in one shot and
     incidentally coerces field types along the way — date-parts strings
     become integer-typed dates, etc. — which sidesteps a class of bugs
     where manubot's URL-metadata resolver returns string years.
 
-    Raises ``RuntimeError`` if ``pandoc`` isn't on PATH or fails.
+    Raises ``RuntimeError`` if neither ``pandoc`` nor ``quarto`` is on
+    PATH, or if the pandoc subprocess fails.
     """
-    pandoc = shutil.which("pandoc")
-    if pandoc is None:
-        raise RuntimeError(
-            "pandoc not found on PATH. quartobot resolve needs pandoc to "
-            "convert CSL JSON to BibLaTeX. Quarto bundles pandoc, but the "
-            "pre-render hook runs in a subprocess that may not have it on "
-            "PATH. Install pandoc (https://pandoc.org/installing.html) "
-            "or ensure Quarto's bundled pandoc is exposed."
-        )
+    cmd = [*_pandoc_invocation(), "-f", "csljson", "-t", "biblatex"]
     try:
         result = subprocess.run(
-            [pandoc, "-f", "csljson", "-t", "biblatex"],
+            cmd,
             input=csl_json_text,
             capture_output=True,
             text=True,
@@ -361,9 +378,7 @@ def resolve_keys(
         # reader rejects ``[]``.
         if bib_output_path is not None and not stdout_mode and merged:
             bib_path = (
-                bib_output_path
-                if isinstance(bib_output_path, Path)
-                else Path(bib_output_path)
+                bib_output_path if isinstance(bib_output_path, Path) else Path(bib_output_path)
             )
             bibtex = _csljson_to_biblatex(serialized)
             bib_path.parent.mkdir(parents=True, exist_ok=True)

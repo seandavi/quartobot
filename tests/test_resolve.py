@@ -680,17 +680,50 @@ def test_resolve_skips_bib_when_no_entries(tmp_path):
     assert not bib.exists()
 
 
-def test_csljson_to_biblatex_raises_when_pandoc_missing():
-    """A clear error is more useful than a generic FileNotFoundError."""
+def test_csljson_to_biblatex_raises_when_pandoc_and_quarto_missing():
+    """A clear error is more useful than a generic FileNotFoundError.
+
+    Both ``pandoc`` and ``quarto`` have to be missing to trip this —
+    the helper falls back to ``quarto pandoc`` when system pandoc
+    isn't on PATH (CI runners with Quarto installed but bundled
+    pandoc unexposed).
+    """
     from quartobot.resolve import _csljson_to_biblatex
 
     with patch("quartobot.resolve.shutil.which", return_value=None):
         try:
             _csljson_to_biblatex("[]")
         except RuntimeError as exc:
-            assert "pandoc not found" in str(exc)
+            assert "neither `pandoc` nor `quarto`" in str(exc)
         else:
-            raise AssertionError("expected RuntimeError when pandoc missing")
+            raise AssertionError("expected RuntimeError when both missing")
+
+
+def test_csljson_to_biblatex_falls_back_to_quarto_pandoc(tmp_path):
+    """When `pandoc` is missing but `quarto` is on PATH, use it."""
+    import subprocess as real_subprocess
+
+    from quartobot.resolve import _csljson_to_biblatex
+
+    def fake_which(name: str) -> str | None:
+        return "/usr/local/bin/quarto" if name == "quarto" else None
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return real_subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout="@misc{x}\n", stderr=""
+        )
+
+    with (
+        patch("quartobot.resolve.shutil.which", fake_which),
+        patch("quartobot.resolve.subprocess.run", fake_run),
+    ):
+        out = _csljson_to_biblatex("[]")
+
+    assert out == "@misc{x}\n"
+    assert captured["cmd"][:2] == ["/usr/local/bin/quarto", "pandoc"]
 
 
 def test_cli_resolve_default_writes_bib(tmp_path):
