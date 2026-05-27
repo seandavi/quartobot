@@ -43,11 +43,11 @@ in @pmid:31479462 and methods inspired by @arxiv:2104.10729.
 
 A Quarto `project.pre-render:` hook resolves each key to canonical
 metadata before pandoc-citeproc runs, writes the result to a
-`references.json` you can commit, and the manuscript renders the same
-way on every machine. **No `quartobot` install needed at render time,
-no live Crossref / PubMed / arXiv hit per render.** CI gets the same
-behavior the author saw locally, and a network blip mid-render is no
-longer a build failure.
+`references.resolved.bib` (BibLaTeX) you can commit, and the
+manuscript renders the same way on every machine. **No `quartobot`
+install needed at render time, no live Crossref / PubMed / arXiv hit
+per render.** CI gets the same behavior the author saw locally, and a
+network blip mid-render is no longer a build failure.
 
 Supported prefixes: `@doi:`, `@pmid:`, `@arxiv:`, `@isbn:`, `@url:`,
 `@wikidata:`, `@pmc:`, plus hand-curated keys from a project `.bib`.
@@ -76,11 +76,11 @@ minimum.
 
 | Command | What it does |
 |---|---|
-| **`resolve`** | The pre-render hook. Invoked by Quarto from `_quarto.yml`'s `project.pre-render:` line. Reads cite keys, writes CSL JSON. |
+| **`resolve`** | The pre-render hook. Invoked by Quarto from `_quarto.yml`'s `project.pre-render:` line. Reads cite keys, writes BibLaTeX (`references.resolved.bib`) plus a CSL JSON cache. |
 | **`scan`** / **`validate`** | CI-lint surfaces. Cite-key inventory and static `_quarto.yml` checks. |
 | **`init`** | Scaffolds the citation pipeline into an existing Quarto project. Three files only. |
 | **`use github-ci`** | Layers the render + PR-preview CI on top. Lean default; `--with-versioned-snapshots` for the manubot per-commit-permalink pattern. |
-| **`reconcile`** | Resolves `references.bib` ↔ `references.json` citation-key collisions with explicit modes. Backup-then-mutate. |
+| **`reconcile`** | Resolves `references.bib` ↔ resolved-bibliography citation-key collisions with explicit modes. Backup-then-mutate. |
 | **`versions`** | Generates the `/versions/` page on gh-pages — tagged releases + open PR previews. |
 | **`mcp`** | Stdio MCP server. Agents in Claude Desktop, Codex, Gemini Code Assist call the same resolver as part of drafting. |
 
