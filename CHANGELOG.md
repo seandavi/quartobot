@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.4.0 — unreleased
+## v0.4.0 — 2026-05-27
 
 The release that makes quartobot work with Quarto's `type: manuscript`
 project type and its Google Scholar metadata post-process. The
