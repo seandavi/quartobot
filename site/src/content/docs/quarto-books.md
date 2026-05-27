@@ -28,7 +28,7 @@ it in. The result:
 ```yaml
 project:
   type: book
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 book:
   title: "My book"
@@ -40,7 +40,7 @@ book:
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 ```
 
 That's the minimum. Cite keys in any chapter resolve before pandoc
@@ -102,7 +102,7 @@ my-book/
 ```yaml
 project:
   type: book
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 book:
   title: "Worked example"
@@ -113,7 +113,7 @@ book:
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 ```
 
 `index.qmd` is plain prose — an introduction with no citations.
@@ -165,7 +165,7 @@ quarto render
 ```
 
 The pre-render hook fires once, resolves both keys (the DOI from
-Crossref, the PMID from PubMed), writes `references.json`, and hands
+Crossref, the PMID from PubMed), writes `references.resolved.bib`, and hands
 control back to pandoc. Output:
 
 ```

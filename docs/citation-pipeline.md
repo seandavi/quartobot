@@ -70,16 +70,20 @@ Sources:
 ## The architecture, in three pieces
 
 1. **Pre-render hook.** `_quarto.yml` declares `pre-render:` calling
-   `quartobot resolve --from-scan . --output references.json`. The
-   hook walks the project, calls manubot's Python API
+   `quartobot resolve --from-scan . --id-mode citation-key`. The hook
+   walks the project, calls manubot's Python API
    (`citekey_to_csl_item`) for every persistent-identifier cite key it
-   finds, and writes CSL JSON with `id` set to the original key
-   (`doi:10.1371/...`, not manubot's short hash). Network work happens
-   here, once, before pandoc ever runs.
+   finds, and writes the resolved entries as BibLaTeX to
+   `references.resolved.bib` with the citation key set to the
+   original prose key (`doi:10.1371/...`, not manubot's short hash).
+   A sidecar `references.json` carries the CSL JSON for the next
+   run's cache lookups. Network work happens here, once, before
+   pandoc ever runs.
 2. **Built-in citeproc.** The standard pandoc citation filter, already
-   in every Quarto install, reads `references.json` exactly as it
-   would any other bibliography file. `[@doi:10.1371/...]` in the
-   prose matches the entry by `id`. No custom filter on our side.
+   in every Quarto install, reads `references.resolved.bib` exactly
+   as it would any other bibliography file. `[@doi:10.1371/...]` in
+   the prose matches the entry by citation key. No custom filter on
+   our side.
 3. **Manubot stays as a Python library dependency**, never as a CLI
    dependency. We never invoke `pandoc-manubot-cite`. We never invoke
    `pandoc` from manubot's side. The pandoc 3.x version-check code
@@ -269,7 +273,7 @@ adoption and extension, not displacement:
   Surfaced 2026-05-14 in the live trial; minimal-impact in practice
   but worth a designed answer.
 - **References.bib merge story.** The minimal example pairs
-  `references.json` (auto-resolved) with `references.bib` (hand-
+  `references.resolved.bib` (auto-resolved) with `references.bib` (hand-
   curated). Pandoc happily reads both in `bibliography:`, so this is
   more a docs question than a code one — but worth thinking through
   for v0.1 (idempotency of `quartobot resolve` against a project that

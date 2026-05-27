@@ -612,3 +612,172 @@ def test_resolve_keys_stdout_mode_writes_to_sys_stdout(capsys):
     assert outcome.output_path is None
     assert outcome.entries_written == 1
     assert data[0]["title"] == "Stub for doi:10.1/x"
+
+
+# --------------------------------------------------- BibLaTeX side-output
+
+
+def test_resolve_writes_bib_output_alongside_csl_json(tmp_path):
+    """When bib_output_path is set, write the BibLaTeX artifact too."""
+    out = tmp_path / "references.json"
+    bib = tmp_path / "references.resolved.bib"
+    with (
+        patch("manubot.cite.citekey.CiteKey", _FakeCiteKey),
+        patch("manubot.cite.citekey.citekey_to_csl_item", _fake_csl_item),
+        patch(
+            "quartobot.resolve._csljson_to_biblatex",
+            lambda txt: "@misc{stub, title={Stub}}\n",
+        ),
+    ):
+        outcome = resolve_keys(
+            ["doi:10.1/x"],
+            output_path=out,
+            cache_path=out,
+            bib_output_path=bib,
+        )
+    assert outcome.bib_output_path == bib
+    assert bib.read_text() == "@misc{stub, title={Stub}}\n"
+    assert out.exists(), "CSL JSON cache should also be written"
+
+
+def test_resolve_skips_bib_in_stdout_mode(tmp_path, capsys):
+    """Stdout mode is the one-shot piping path — no .bib file written."""
+    bib = tmp_path / "references.resolved.bib"
+    with (
+        patch("manubot.cite.citekey.CiteKey", _FakeCiteKey),
+        patch("manubot.cite.citekey.citekey_to_csl_item", _fake_csl_item),
+        patch(
+            "quartobot.resolve._csljson_to_biblatex",
+            lambda txt: "should not be called\n",
+        ),
+    ):
+        outcome = resolve_keys(
+            ["doi:10.1/x"],
+            output_path="-",
+            bib_output_path=bib,
+        )
+    capsys.readouterr()
+    assert outcome.bib_output_path is None
+    assert not bib.exists()
+
+
+def test_resolve_skips_bib_when_no_entries(tmp_path):
+    """Pandoc rejects an empty CSL JSON array — don't call it for nothing."""
+    bib = tmp_path / "references.resolved.bib"
+    out = tmp_path / "references.json"
+    # Resolution fails for an unrecognized key; merged stays empty.
+    with (
+        patch("manubot.cite.citekey.CiteKey", _FakeCiteKey),
+        patch("manubot.cite.citekey.citekey_to_csl_item", lambda *a, **k: None),
+    ):
+        outcome = resolve_keys(
+            ["doi:10.1/x"],
+            output_path=out,
+            cache_path=out,
+            bib_output_path=bib,
+        )
+    assert outcome.bib_output_path is None
+    assert not bib.exists()
+
+
+def test_csljson_to_biblatex_raises_when_pandoc_and_quarto_missing():
+    """A clear error is more useful than a generic FileNotFoundError.
+
+    Both ``pandoc`` and ``quarto`` have to be missing to trip this —
+    the helper falls back to ``quarto pandoc`` when system pandoc
+    isn't on PATH (CI runners with Quarto installed but bundled
+    pandoc unexposed).
+    """
+    from quartobot.resolve import _csljson_to_biblatex
+
+    with patch("quartobot.resolve.shutil.which", return_value=None):
+        try:
+            _csljson_to_biblatex("[]")
+        except RuntimeError as exc:
+            assert "neither `pandoc` nor `quarto`" in str(exc)
+        else:
+            raise AssertionError("expected RuntimeError when both missing")
+
+
+def test_resolve_skips_bib_when_pandoc_missing(tmp_path, caplog):
+    """Missing pandoc/quarto is a warning, not a fatal error.
+
+    Standalone CLI use cases (one-shot lookups, MCP, cache population
+    outside a Quarto context) shouldn't require pandoc to be
+    installed. Only the bib write is skipped; the JSON cache still
+    writes.
+    """
+    import logging
+
+    bib = tmp_path / "references.resolved.bib"
+    out = tmp_path / "references.json"
+    with (
+        patch("manubot.cite.citekey.CiteKey", _FakeCiteKey),
+        patch("manubot.cite.citekey.citekey_to_csl_item", _fake_csl_item),
+        patch("quartobot.resolve.shutil.which", return_value=None),
+        caplog.at_level(logging.WARNING, logger="quartobot.resolve"),
+    ):
+        outcome = resolve_keys(
+            ["doi:10.1/x"],
+            output_path=out,
+            cache_path=out,
+            bib_output_path=bib,
+        )
+    assert outcome.entries_written == 1, "CSL JSON cache should still write"
+    assert out.exists()
+    assert outcome.bib_output_path is None
+    assert not bib.exists()
+    assert any("skipping BibLaTeX" in r.message for r in caplog.records)
+
+
+def test_csljson_to_biblatex_falls_back_to_quarto_pandoc(tmp_path):
+    """When `pandoc` is missing but `quarto` is on PATH, use it."""
+    import subprocess as real_subprocess
+
+    from quartobot.resolve import _csljson_to_biblatex
+
+    def fake_which(name: str) -> str | None:
+        return "/usr/local/bin/quarto" if name == "quarto" else None
+
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return real_subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout="@misc{x}\n", stderr=""
+        )
+
+    with (
+        patch("quartobot.resolve.shutil.which", fake_which),
+        patch("quartobot.resolve.subprocess.run", fake_run),
+    ):
+        out = _csljson_to_biblatex("[]")
+
+    assert out == "@misc{x}\n"
+    assert captured["cmd"][:2] == ["/usr/local/bin/quarto", "pandoc"]
+
+
+def test_cli_resolve_default_writes_bib(tmp_path):
+    """CLI default: pre-render hook produces .resolved.bib without --bib-output."""
+    fixture = (
+        '[\n  {"id": "doi:10.1/x", "title": "Cite me",\n'
+        '   "type": "article-journal",\n'
+        '   "note": "standard_id: doi:10.1/x"}\n]\n'
+    )
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as iso_dir:
+        (Path(iso_dir) / "doc.qmd").write_text("Cite @doi:10.1/x.\n")
+        # Pre-populate cache so the run hits the cache path (no manubot calls).
+        (Path(iso_dir) / "references.json").write_text(fixture)
+        with patch(
+            "quartobot.resolve._csljson_to_biblatex",
+            lambda txt: "@article{doi:10.1/x, title={Cite me}}\n",
+        ):
+            result = runner.invoke(
+                main,
+                ["resolve", "--from-scan", ".", "--id-mode", "citation-key"],
+            )
+        assert result.exit_code == 0, result.output
+        bib = Path(iso_dir) / "references.resolved.bib"
+        assert bib.exists()
+        assert "doi:10.1/x" in bib.read_text()

@@ -3,8 +3,12 @@ index.html
 index.pdf
 index.docx
 index_files/
+references.resolved.bib
 references.json
 
 # Quarto state.
 .quarto/
 _freeze/
+
+/.quarto/
+**/*.quarto_ipynb

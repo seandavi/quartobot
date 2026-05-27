@@ -14,13 +14,13 @@ from quartobot.validate import (
     _check_no_duplicate_cites,
     _check_pre_render_hook,
     _check_quarto_yml_exists,
-    _check_references_json_in_bibliography,
+    _check_resolved_bib_in_bibliography,
     _load_quarto_yml,
     format_outcome,
     validate_project,
 )
 
-_GOOD_PRE_RENDER = "quartobot resolve --from-scan . --output references.json --id-mode citation-key"
+_GOOD_PRE_RENDER = "quartobot resolve --from-scan . --id-mode citation-key"
 
 
 def _make_project(
@@ -35,7 +35,7 @@ def _make_project(
 
         cfg = {
             "project": {"pre-render": _GOOD_PRE_RENDER},
-            "bibliography": ["references.bib", "references.json"],
+            "bibliography": ["references.bib", "references.resolved.bib"],
         }
         (tmp_path / "_quarto.yml").write_text(yaml.safe_dump(cfg))
     elif isinstance(quarto_yml, dict):
@@ -83,7 +83,7 @@ def test_quarto_yml_missing(tmp_path):
 
 
 def test_bibliography_declared_as_list():
-    cfg = {"bibliography": ["references.bib", "references.json"]}
+    cfg = {"bibliography": ["references.bib", "references.resolved.bib"]}
     c = _check_bibliography_declared(cfg)
     assert c.passed
 
@@ -146,21 +146,30 @@ def test_pre_render_hook_missing_citation_key_flag():
     assert "citation-key" in (c.detail or "")
 
 
-def test_references_json_in_bibliography():
-    cfg = {"bibliography": ["references.bib", "references.json"]}
-    c = _check_references_json_in_bibliography(cfg)
+def test_resolved_bib_in_bibliography():
+    cfg = {"bibliography": ["references.bib", "references.resolved.bib"]}
+    c = _check_resolved_bib_in_bibliography(cfg)
     assert c.passed
 
 
-def test_references_json_missing_from_bibliography():
+def test_legacy_references_json_in_bibliography_passes_with_hint():
+    # Back-compat: unmigrated v0.3 projects keep passing, but the
+    # detail string nudges them to switch.
+    cfg = {"bibliography": ["references.bib", "references.json"]}
+    c = _check_resolved_bib_in_bibliography(cfg)
+    assert c.passed
+    assert "legacy" in (c.detail or "").lower()
+
+
+def test_resolved_bib_missing_from_bibliography():
     cfg = {"bibliography": ["references.bib"]}
-    c = _check_references_json_in_bibliography(cfg)
+    c = _check_resolved_bib_in_bibliography(cfg)
     assert not c.passed
     assert "Citeproc won't" in (c.detail or "")
 
 
-def test_references_json_no_bibliography_at_all():
-    c = _check_references_json_in_bibliography({})
+def test_resolved_bib_no_bibliography_at_all():
+    c = _check_resolved_bib_in_bibliography({})
     assert not c.passed
 
 
@@ -210,19 +219,19 @@ def test_validate_happy_path(tmp_path):
     _make_project(tmp_path, qmd_content="Cite @doi:10.1371/journal.pcbi.1007128.\n")
     outcome = validate_project(tmp_path)
     assert outcome.passed, outcome.failures
-    # _quarto.yml + bibliography + pre-render + references.json + dup-cites
+    # _quarto.yml + bibliography + pre-render + resolved-bib + dup-cites
     assert len(outcome.checks) == 5
 
 
 def test_validate_missing_pre_render(tmp_path):
-    cfg = {"bibliography": ["references.bib", "references.json"]}
+    cfg = {"bibliography": ["references.bib", "references.resolved.bib"]}
     _make_project(tmp_path, quarto_yml=cfg)
     outcome = validate_project(tmp_path)
     assert not outcome.passed
     assert "pre-render hook" in [c.name for c in outcome.failures]
 
 
-def test_validate_references_json_not_in_bibliography(tmp_path):
+def test_validate_resolved_bib_not_in_bibliography(tmp_path):
     cfg = {
         "project": {"pre-render": _GOOD_PRE_RENDER},
         "bibliography": ["references.bib"],
@@ -230,7 +239,7 @@ def test_validate_references_json_not_in_bibliography(tmp_path):
     _make_project(tmp_path, quarto_yml=cfg)
     outcome = validate_project(tmp_path)
     assert not outcome.passed
-    assert "references.json in bibliography" in [c.name for c in outcome.failures]
+    assert "resolved bibliography in `bibliography:`" in [c.name for c in outcome.failures]
 
 
 def test_validate_no_quarto_yml(tmp_path):

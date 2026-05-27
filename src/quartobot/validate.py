@@ -5,9 +5,11 @@
 - `_quarto.yml` exists and declares `bibliography:`.
 - `project.pre-render` declares a `quartobot resolve` invocation with
   `--id-mode citation-key` (the mode that lets pandoc-citeproc match
-  prose keys against the resolved CSL JSON).
-- `references.json` is listed under `bibliography:`. Otherwise the
-  pre-render hook writes a CSL JSON file that citeproc never reads.
+  prose keys against the resolved bibliography).
+- The pre-render hook's bibliography output is listed under
+  `bibliography:`. The current artifact is `references.resolved.bib`;
+  the legacy `references.json` is still accepted with a migration
+  hint. Otherwise the hook writes a file that citeproc never reads.
 - No cite key appears in more than one file (same-file repetition is
   the normal academic-writing case and is not flagged; cross-file
   duplication is the case the chunked-content pattern can produce by
@@ -145,7 +147,7 @@ def _check_pre_render_hook(config: dict[str, Any]) -> Check:
                 "missing — add to `_quarto.yml`:\n"
                 "    project:\n"
                 "      pre-render: quartobot resolve --from-scan . "
-                "--output references.json --id-mode citation-key"
+                "--id-mode citation-key"
             ),
         )
     if "quartobot resolve" not in value:
@@ -174,27 +176,41 @@ def _check_pre_render_hook(config: dict[str, Any]) -> Check:
     )
 
 
-def _check_references_json_in_bibliography(config: dict[str, Any]) -> Check:
-    """The pre-render hook's `references.json` output must be in `bibliography:`.
+def _check_resolved_bib_in_bibliography(config: dict[str, Any]) -> Check:
+    """The pre-render hook's BibLaTeX output must be in `bibliography:`.
 
-    Otherwise `quartobot resolve` writes a CSL JSON file that pandoc
-    citeproc never reads, and the resolved entries don't reach the
-    rendered output.
+    The current artifact is ``references.resolved.bib``. The legacy
+    ``references.json`` from v0.3 and earlier still counts as a pass
+    (so unmigrated projects keep rendering), but the detail string
+    nudges users toward the BibLaTeX file — that's the one Quarto's
+    ``manuscript`` project type can read cleanly.
     """
     bibs = _bibliography_list(config)
+    if "references.resolved.bib" in bibs:
+        return Check(
+            name="resolved bibliography in `bibliography:`",
+            passed=True,
+            detail="`references.resolved.bib` listed in `bibliography:`",
+        )
     if "references.json" in bibs:
         return Check(
-            name="references.json in bibliography",
+            name="resolved bibliography in `bibliography:`",
             passed=True,
-            detail="`references.json` listed in `bibliography:`",
+            detail=(
+                "`references.json` listed in `bibliography:` — legacy "
+                "v0.3 pattern. Works for `type: default` projects but "
+                "breaks Quarto's `type: manuscript` Google Scholar "
+                "post-process. Switch to `references.resolved.bib` to "
+                "support both."
+            ),
         )
     return Check(
-        name="references.json in bibliography",
+        name="resolved bibliography in `bibliography:`",
         passed=False,
         detail=(
-            f"`references.json` is not in `bibliography:` ({bibs}). "
-            f"Citeproc won't read the resolved entries the pre-render "
-            f"hook writes there."
+            f"`references.resolved.bib` is not in `bibliography:` "
+            f"({bibs}). Citeproc won't read the resolved entries the "
+            f"pre-render hook writes."
         ),
     )
 
@@ -251,7 +267,7 @@ def validate_project(project: Path) -> ValidateOutcome:
         else:
             outcome.checks.append(_check_bibliography_declared(config))
             outcome.checks.append(_check_pre_render_hook(config))
-            outcome.checks.append(_check_references_json_in_bibliography(config))
+            outcome.checks.append(_check_resolved_bib_in_bibliography(config))
 
     # Duplicate-cite scan is independent of _quarto.yml.
     outcome.checks.append(_check_no_duplicate_cites(project))

@@ -6,17 +6,17 @@ project:
   # in https://github.com/seandavi/quartobot/issues/3.
 
   # Resolves @doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmcid:,
-  # and bare DOIs before pandoc runs. The resolved CSL JSON lands in
-  # references.json (gitignored — regenerated each render) and pandoc
-  # citeproc reads it alongside hand-curated entries in references.bib.
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  # and bare DOIs before pandoc runs. The resolved entries land in
+  # references.resolved.bib (gitignored — regenerated each render) and
+  # pandoc reads it alongside hand-curated entries in references.bib.
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 # Both files merged at render time. Hand-curated entries live in
-# references.bib; auto-resolved entries land in references.json (written
-# by the pre-render hook above, ignored by git).
+# references.bib; auto-resolved entries land in references.resolved.bib
+# (written by the pre-render hook above, ignored by git).
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 csl: https://raw.githubusercontent.com/citation-style-language/styles/master/nature.csl
 
 format:

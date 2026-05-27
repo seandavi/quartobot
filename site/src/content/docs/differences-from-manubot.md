@@ -20,7 +20,7 @@ is the publishing substrate underneath.
   `@url:` key (and trailing `.,;:!?`) is stripped at scan time, because
   pandoc's cite-key parser strips it during parse and the resolver-side
   and consumer-side keys would otherwise disagree. The stripped form is
-  what lands in `references.json`.
+  what lands in `references.resolved.bib`.
 - **CSL JSON for auto-resolved entries, `.bib` for hand-curated.**
   Both declared in the project config, merged at render by pandoc
   citeproc.

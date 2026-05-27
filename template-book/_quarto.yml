@@ -3,7 +3,7 @@ project:
   # See the manuscript template for what the pre-render hook does.
   # Same behavior — resolves persistent-identifier cite keys before
   # pandoc runs, across every chapter in the book.
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 book:
   title: "My quartobot book"
@@ -23,10 +23,11 @@ book:
   # repo-actions: [edit, issue]
 
 # Dual bibliography: hand-curated entries in references.bib, auto-resolved
-# entries in references.json (written by the pre-render hook, gitignored).
+# entries in references.resolved.bib (written by the pre-render hook,
+# gitignored).
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 csl: https://raw.githubusercontent.com/citation-style-language/styles/master/nature.csl
 
 format:

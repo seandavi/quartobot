@@ -138,12 +138,12 @@ quartobot resolve --output - doi:10.21105/joss.01686 \
 project:
   pre-render: >-
     quartobot resolve --from-scan .
-    --output references.json
+    --id-mode citation-key
     --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 ```
 
   </div>

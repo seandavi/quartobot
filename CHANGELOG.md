@@ -1,5 +1,52 @@
 # Changelog
 
+## v0.4.0 — unreleased
+
+The release that makes quartobot work with Quarto's `type: manuscript`
+project type and its Google Scholar metadata post-process. The
+underlying mismatch: Quarto's `manuscript` type enables
+`google-scholar: true` by default, which triggers a pandoc invocation
+that reads bibliographies positionally as `pandoc <file> -t csljson
+--citeproc`. Pandoc auto-detects `.bib` positionally but reads `.json`
+as Pandoc-AST, so a CSL JSON bibliography crashes the render with
+`Error in $: mempty`. The fix lives on quartobot's side: convert the
+resolved CSL JSON to BibLaTeX (via a pandoc subprocess inside the
+pre-render hook) and write that as the artifact pandoc consumes. CSL
+JSON sticks around as an internal cache only.
+
+### Changed (BREAKING)
+
+- `quartobot resolve` now writes `references.resolved.bib` (BibLaTeX)
+  as the primary artifact, with `references.json` retained as an
+  internal CSL JSON cache. `_quarto.yml` should list
+  `references.resolved.bib` (not `references.json`) under
+  `bibliography:`. The pre-render line no longer needs an explicit
+  `--output` flag — defaults handle it:
+
+      pre-render: quartobot resolve --from-scan . --id-mode citation-key
+
+  Existing v0.3 projects keep rendering as long as their `_quarto.yml`
+  lists `references.json` under `bibliography:` (still written as the
+  cache) — `quartobot validate` flags this with a migration hint. For
+  Quarto `type: manuscript` projects the migration is required:
+  switch to `references.resolved.bib`.
+
+### Added
+
+- `--bib-output PATH` on `quartobot resolve` to override the BibLaTeX
+  output path. Defaults to `references.resolved.bib`. Skipped
+  automatically when `--output -` (stdout mode for one-shot piping).
+
+### Why
+
+Validated on `seandavi/2026-quartobot-manuscript`, the first project
+that combined the quartobot pre-render hook with Quarto's `type:
+manuscript`. The CSL-JSON-only pattern silently worked on every
+`type: default` project but broke `renderToCSLJSON` (Quarto's
+post-process for `<meta name="citation_reference">` tags) on the
+manuscript-type variant. Emitting BibLaTeX recovers the manuscript
+type + Google Scholar metadata + MECA bundle in one move.
+
 ## v0.3.0 — 2026-05-19
 
 The release that makes quartobot ready to onboard non-Sean users. The

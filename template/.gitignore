@@ -17,6 +17,7 @@ _freeze/
 **/*.toc
 
 # manubot resolver outputs — these are regenerated on every render.
+references.resolved.bib
 references.json
 
 # Quarto extensions are managed via `quarto add`; don't commit the cache.

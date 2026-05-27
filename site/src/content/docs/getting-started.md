@@ -38,10 +38,10 @@ git push
 ```
 
 `quartobot init` wires the `quartobot resolve` pre-render hook into
-`_quarto.yml`, declares `references.bib` + `references.json` under
-`bibliography:`, and seeds an empty `references.bib`. Three files,
-idempotent — run it again and nothing breaks. For the GitHub Actions
-render workflow + version banner, follow up with
+`_quarto.yml`, declares `references.bib` + `references.resolved.bib`
+under `bibliography:`, and seeds an empty `references.bib`. Three
+files, idempotent — run it again and nothing breaks. For the GitHub
+Actions render workflow + version banner, follow up with
 `quartobot use github-ci`.
 
 ### I just want auto-resolved citations
@@ -54,11 +54,11 @@ Then in your `_quarto.yml`:
 
 ```yaml
 project:
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 ```
 
 And in your prose:
@@ -69,7 +69,7 @@ The pattern is described in @doi:10.1371/journal.pcbi.1007128.
 
 That's the minimum. No filter, no `quarto add`, no extension. The hook
 runs before pandoc on every render; pandoc-citeproc reads
-`references.json` and `references.bib` together.
+`references.resolved.bib` and `references.bib` together.
 
 ## What you get
 
@@ -78,14 +78,16 @@ scaffold.
 
 - **`quartobot resolve`** — the citation resolver. Reads
   persistent-identifier cite keys (`@doi:`, `@pmid:`, `@arxiv:`,
-  `@isbn:`, `@url:`, `@wikidata:`, `@pmc:`) and writes CSL JSON.
-  Runs as a Quarto `pre-render:` hook on every render, or via
-  `--output -` for one-shot stdout lookups. See
+  `@isbn:`, `@url:`, `@wikidata:`, `@pmc:`) and writes BibLaTeX
+  (`references.resolved.bib`) plus a CSL JSON cache
+  (`references.json`). Runs as a Quarto `pre-render:` hook on every
+  render, or via `--output -` for one-shot stdout lookups. See
   [resolve a single citation](../resolve-single-citation/).
 - **`quartobot init`** — scaffolds the citation pipeline into an
   existing Quarto project. Three files only: the `_quarto.yml`
   snippet (manual-merge if the file exists), `references.bib` seed,
-  `.gitignore` lines for Quarto outputs and `references.json`.
+  `.gitignore` lines for Quarto outputs and the regenerated
+  bibliography files.
 - **`quartobot use github-ci`** — opt-in layer. Adds
   `.github/workflows/render.yml` (calls the upstream reusable
   workflow), a PR-preview cleanup workflow, and the version-banner
@@ -106,7 +108,7 @@ scaffold.
 - **A GitHub repo** — for the CI / Pages parts. The pre-render hook
   works without a GitHub repo or CI; first render needs network for
   Crossref/PubMed/etc., subsequent renders skip the network call when
-  `references.json` already has the entry.
+  the CSL JSON cache already has the entry.
 
 ## See also
 

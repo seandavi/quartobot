@@ -45,7 +45,7 @@ Before tagging `vX.Y.Z`, walk [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). It
 
 Two artifacts ship together:
 
-1. `quartobot` — a Python CLI. `quartobot resolve` is invoked from Quarto's `project.pre-render:` declaration in `_quarto.yml`, calls `manubot.cite.citekey_to_csl_item` for every persistent-identifier cite key in the project, and writes CSL JSON to `references.json`. Pandoc-citeproc reads that file alongside any hand-curated `references.bib`. `scan`, `validate`, and `init` round out the surface for CI-lint and scaffolding.
+1. `quartobot` — a Python CLI. `quartobot resolve` is invoked from Quarto's `project.pre-render:` declaration in `_quarto.yml`, calls `manubot.cite.citekey_to_csl_item` for every persistent-identifier cite key in the project, and writes the resolved entries as BibLaTeX to `references.resolved.bib` (the file pandoc reads at render). A sidecar `references.json` carries the CSL JSON for the next run's cache lookups. Pandoc-citeproc reads `references.resolved.bib` alongside any hand-curated `references.bib`. `scan`, `validate`, and `init` round out the surface for CI-lint and scaffolding.
 2. `quartobot-manuscript` — a GitHub template combining Quarto + the pre-render hook wiring + CI for per-commit permalinks, version banners, and PR previews.
 
 [`docs/citation-pipeline.md`](docs/citation-pipeline.md) is the architecture rationale: the pre-render seam is structurally cleaner than the filter shape v0.1 originally shipped (manubot's pandoc 3.x version check and `pandoc-manubot-cite`'s PATH requirement at render time are both unreachable from the pre-render path), and the seam opens a citation-plugin architecture that the filter form couldn't support.
@@ -55,7 +55,7 @@ Two artifacts ship together:
 ## Key design decisions (already settled)
 
 - Reuse `manubot.cite` (the Python library — `citekey_to_csl_item`) — do NOT rebuild the resolver. Manubot's seven first-class handlers (`doi`, `pmid`, `arxiv`, `isbn`, `url`, `wikidata`, `pmc`) represent eight years of accumulated bug fixes for source-API quirks. `quartobot resolve` calls the library directly from the pre-render hook; manubot's `pandoc-manubot-cite` is not invoked at any point.
-- Bibliography: CSL JSON for auto-resolved entries + hand-curated `.bib` alongside. Both declared in `_quarto.yml`.
+- Bibliography output format: BibLaTeX (`references.resolved.bib`) for auto-resolved entries + hand-curated `references.bib` alongside. Both declared in `_quarto.yml`. CSL JSON (`references.json`) is kept as a gitignored internal cache only — it's not in the `bibliography:` list. The BibLaTeX choice is what makes Quarto's `type: manuscript` Google Scholar metadata post-process work; CSL JSON broke `renderToCSLJSON` when given positionally to pandoc (≥3.8 reads `.json` as Pandoc-AST). v0.4 onward.
 - Citation key syntax: manubot's exactly (`@doi:`, `@pmid:`, `@arxiv:`, `@isbn:`, `@url:`, `@wikidata:`, bare DOIs). No new syntax.
 - `--id-mode citation-key` on `quartobot resolve` is load-bearing — it writes the CSL `id` as the user's prose key so pandoc-citeproc matches `[@doi:…]` directly. The validate check warns if it's missing from the pre-render line.
 - Permalink: `/v/<full-sha>/` per manubot convention.
