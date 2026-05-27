@@ -225,10 +225,13 @@ def resolve_keys(
             writes to that file. The string `"-"` writes to stdout (no
             file side effect). `None` skips writing entirely.
         bib_output_path: Where to write the BibLaTeX artifact that
-            pandoc reads at render. A `Path` writes to that file.
-            `None` (the default) skips the BibLaTeX write — used when
+            pandoc reads at render. A `Path` writes to that file via a
+            `pandoc -f csljson -t biblatex` subprocess. `None` (the
+            default) skips the BibLaTeX write — used when
             ``output_path`` is the stdout sentinel or when the caller
-            only wants the CSL JSON cache.
+            only wants the CSL JSON cache. If pandoc/quarto isn't on
+            PATH, the BibLaTeX write is skipped with a warning rather
+            than failing the run; the CSL JSON cache still writes.
         dry_run: If True, don't make network calls — report what would
             be resolved.
         log_level: Manubot's logging verbosity for resolver failures.
@@ -376,14 +379,31 @@ def resolve_keys(
         # piping use case) and when the caller hasn't asked for one.
         # Empty bibliographies don't go through pandoc — its csljson
         # reader rejects ``[]``.
+        #
+        # If pandoc/quarto isn't on PATH, log a warning and skip the
+        # .bib write rather than failing the whole resolve. The CSL
+        # JSON cache still writes — useful for standalone CLI uses
+        # (one-shot lookups, MCP, cache-population without rendering)
+        # that don't need the BibLaTeX artifact. The render-time
+        # scenario, where the .bib actually matters, always has Quarto
+        # on PATH and never trips this branch.
         if bib_output_path is not None and not stdout_mode and merged:
             bib_path = (
                 bib_output_path if isinstance(bib_output_path, Path) else Path(bib_output_path)
             )
-            bibtex = _csljson_to_biblatex(serialized)
-            bib_path.parent.mkdir(parents=True, exist_ok=True)
-            bib_path.write_text(bibtex, encoding="utf-8")
-            outcome.bib_output_path = bib_path
+            try:
+                bibtex = _csljson_to_biblatex(serialized)
+            except RuntimeError as exc:
+                logger.warning(
+                    "skipping BibLaTeX output (%s): %s. CSL JSON cache still written to %s.",
+                    bib_path,
+                    exc,
+                    file_output,
+                )
+            else:
+                bib_path.parent.mkdir(parents=True, exist_ok=True)
+                bib_path.write_text(bibtex, encoding="utf-8")
+                outcome.bib_output_path = bib_path
 
     return outcome
 

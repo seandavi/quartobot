@@ -699,6 +699,37 @@ def test_csljson_to_biblatex_raises_when_pandoc_and_quarto_missing():
             raise AssertionError("expected RuntimeError when both missing")
 
 
+def test_resolve_skips_bib_when_pandoc_missing(tmp_path, caplog):
+    """Missing pandoc/quarto is a warning, not a fatal error.
+
+    Standalone CLI use cases (one-shot lookups, MCP, cache population
+    outside a Quarto context) shouldn't require pandoc to be
+    installed. Only the bib write is skipped; the JSON cache still
+    writes.
+    """
+    import logging
+
+    bib = tmp_path / "references.resolved.bib"
+    out = tmp_path / "references.json"
+    with (
+        patch("manubot.cite.citekey.CiteKey", _FakeCiteKey),
+        patch("manubot.cite.citekey.citekey_to_csl_item", _fake_csl_item),
+        patch("quartobot.resolve.shutil.which", return_value=None),
+        caplog.at_level(logging.WARNING, logger="quartobot.resolve"),
+    ):
+        outcome = resolve_keys(
+            ["doi:10.1/x"],
+            output_path=out,
+            cache_path=out,
+            bib_output_path=bib,
+        )
+    assert outcome.entries_written == 1, "CSL JSON cache should still write"
+    assert out.exists()
+    assert outcome.bib_output_path is None
+    assert not bib.exists()
+    assert any("skipping BibLaTeX" in r.message for r in caplog.records)
+
+
 def test_csljson_to_biblatex_falls_back_to_quarto_pandoc(tmp_path):
     """When `pandoc` is missing but `quarto` is on PATH, use it."""
     import subprocess as real_subprocess
