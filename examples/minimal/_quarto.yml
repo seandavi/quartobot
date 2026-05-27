@@ -5,11 +5,11 @@
 #   uv tool install git+https://github.com/seandavi/quartobot
 
 project:
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 
 format:
   html:

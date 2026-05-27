@@ -7,8 +7,8 @@ Notice that both citations above appeared in earlier chapters too,
 and that they resolve to the same entries here. The pre-render hook
 runs once per render across the whole project, so each unique cite key
 is resolved exactly once regardless of how many chapters cite it; the
-resulting `references.json` is what pandoc citeproc reads for every
-chapter.
+resulting `references.resolved.bib` is what pandoc citeproc reads
+for every chapter.
 
 Each chapter renders its own bibliography section at the bottom; that's
 Quarto's default for HTML book output. A future quartobot CLI option

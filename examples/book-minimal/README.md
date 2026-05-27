@@ -25,9 +25,10 @@ open _book/index.html
   (`chapters/intro.html`, `chapters/methods.html`,
   `chapters/discussion.html`), plus the standard Quarto book site
   assets (search index, sidebar, theme bundles).
-- `references.json` at the project root with one CSL JSON entry per
-  unique persistent-identifier cite key found across chapters, keyed
-  by the user's prose form.
+- `references.resolved.bib` at the project root with one BibLaTeX
+  entry per unique persistent-identifier cite key found across
+  chapters, keyed by the user's prose form. `references.json` sits
+  alongside as the CSL JSON cache.
 - Each chapter's HTML carries its own bibliography section at the
   bottom listing only the cites that chapter references — Quarto
   book's idiomatic layout.

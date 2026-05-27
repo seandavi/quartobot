@@ -11,8 +11,8 @@ This book chapter cites the foundational manubot paper above without
 any setup beyond declaring the pre-render hook in `_quarto.yml`. No
 `references.bib` entry, no manual lookup — `quartobot resolve` calls
 `manubot.cite`, fetches the DOI metadata from Crossref before pandoc
-runs, and writes the CSL JSON entry to `references.json` where pandoc
-citeproc reads it.
+runs, and writes the BibLaTeX entry to `references.resolved.bib`
+where pandoc citeproc reads it.
 
 For a contrast, `@quarto2024` references a hand-curated entry from
 `references.bib`. Both kinds of citation render through the same

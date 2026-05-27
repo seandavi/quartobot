@@ -41,7 +41,7 @@ Two things to notice in the bibliography below:
 - `@doi:10.1371/journal.pcbi.1007128` resolved automatically. You wrote
   the DOI in the prose; the `quartobot resolve` pre-render hook fetched
   the metadata from Crossref before pandoc started and wrote it to
-  `references.json`.
+  `references.resolved.bib`.
 - `@quarto2024` is a hand-curated entry from `references.bib`. Use this
   form when you want full control over the bibliography record — citing
   software, grey literature, or anything the resolver doesn't have good

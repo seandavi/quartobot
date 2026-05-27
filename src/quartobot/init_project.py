@@ -3,8 +3,8 @@
 `quartobot init` writes the minimum a vanilla Quarto project needs to
 adopt the citation pipeline: a `_quarto.yml` wired with the
 `quartobot resolve` pre-render hook + `bibliography:` list, a seed
-`references.bib`, and a `.gitignore` augment so `references.json`
-(regenerated each render) stays out of the repo.
+`references.bib`, and a `.gitignore` augment so the regenerated
+`references.resolved.bib` and CSL JSON cache stay out of the repo.
 
 The GitHub Actions render workflow, version banner, and PR-preview
 cleanup live in `quartobot use github-ci` now — opt-in machinery, not
@@ -39,14 +39,14 @@ _QUARTO_YML_MANUSCRIPT = """\
 project:
   type: default
   # Resolves @doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmcid:,
-  # and bare DOIs before pandoc runs. The resolved CSL JSON lands in
-  # references.json (gitignored — regenerated each render) and pandoc
-  # citeproc reads it alongside hand-curated entries in references.bib.
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  # and bare DOIs before pandoc runs. The resolved entries land in
+  # references.resolved.bib (gitignored — regenerated each render) and
+  # pandoc reads it alongside hand-curated entries in references.bib.
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 
 format:
   html:
@@ -61,7 +61,7 @@ _QUARTO_YML_BOOK = """\
 project:
   type: book
   # See the manuscript template for what the pre-render hook does.
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 book:
   title: "My quartobot book"
@@ -74,7 +74,7 @@ book:
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 
 format:
   html:
@@ -84,8 +84,8 @@ format:
 
 _REFERENCES_BIB = """\
 % Hand-curated entries live here. Auto-resolved entries written by
-% `quartobot resolve` land in references.json (regenerated each render,
-% ignored by git).
+% `quartobot resolve` land in references.resolved.bib (regenerated
+% each render, ignored by git).
 """
 
 
@@ -94,6 +94,7 @@ _GITIGNORE_LINES = [
     "_book/",
     "_freeze/",
     ".quarto/",
+    "references.resolved.bib",
     "references.json",
     "*.bak-*",
     "*_files/",
@@ -241,11 +242,11 @@ def _quarto_yml_snippet_for_manual_merge() -> str:
 # `project:` next to your existing `type:` value.
 
 project:
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 """
 
 

@@ -20,22 +20,25 @@ open index.html
 
 ## What you should see
 
-- `references.json` written at the project root with one CSL JSON
-  entry for the resolved DOI (`10.1371/journal.pcbi.1007128`), keyed
-  by the user's prose form (`doi:10.1371/journal.pcbi.1007128`).
+- `references.resolved.bib` written at the project root with one
+  BibLaTeX entry for the resolved DOI (`10.1371/journal.pcbi.1007128`),
+  keyed by the user's prose form (`doi:10.1371/journal.pcbi.1007128`).
+- A sidecar `references.json` (CSL JSON cache) the next resolve uses
+  to skip the network round-trip.
 - The rendered HTML shows both `@doi:…` and `@quarto2024` citations
   in a numbered bibliography.
 
-The second render skips the network round-trip when `references.json`
+The second render skips the network round-trip when the CSL JSON cache
 already contains the entry (`quartobot resolve` is idempotent against
-its own output). `@quarto2024` is read directly from `references.bib`
+its own cache). `@quarto2024` is read directly from `references.bib`
 and never needs a network call.
 
 ## Generated artifacts
 
-The render produces `index.html`, `references.json`, and `_freeze/`.
-All three are gitignored (`examples/minimal/.gitignore`) so this
-directory stays clean inside the repo.
+The render produces `index.html`, `references.resolved.bib`,
+`references.json`, and `_freeze/`. All four are gitignored
+(`examples/minimal/.gitignore`) so this directory stays clean inside
+the repo.
 
 ## Why this isn't the template
 

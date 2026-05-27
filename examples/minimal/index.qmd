@@ -18,9 +18,10 @@ The Quarto publishing stack is documented in [@quarto2024].
 
 After `quarto render`:
 
-- `references.json` exists at the project root with one CSL JSON entry
-  for the resolved DOI, keyed by the user's prose form
+- `references.resolved.bib` exists at the project root with one
+  BibLaTeX entry for the resolved DOI, keyed by the user's prose form
   (`doi:10.1371/journal.pcbi.1007128`).
+- `references.json` (CSL JSON cache) sits alongside it.
 - Both citations appear in the bibliography below, correctly formatted.
 
 # References {.unnumbered}

@@ -8,6 +8,7 @@ _freeze/
 **/*.quarto_ipynb
 
 # manubot resolver output (regenerated each render).
+references.resolved.bib
 references.json
 
 # Quarto extension cache (installed via `quarto add`).
