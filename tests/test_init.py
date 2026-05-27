@@ -121,6 +121,9 @@ def test_gitignore_created_when_absent(tmp_path):
     assert action.status == "appended"
     content = (tmp_path / ".gitignore").read_text()
     assert "_freeze/" in content
+    # Both the BibLaTeX artifact pandoc reads and the CSL JSON cache
+    # should be ignored — they're both regenerated every render.
+    assert "references.resolved.bib" in content
     assert "references.json" in content
 
 
