@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.4.0 — unreleased
+## v0.5.0 — 2026-05-27
+
+(Skipped v0.4.0 — that version number was previously published to
+PyPI during the pre-render-hook architecture transition and can't be
+reused. The work landed here is what would have been v0.4.0.)
 
 The release that makes quartobot work with Quarto's `type: manuscript`
 project type and its Google Scholar metadata post-process. The
