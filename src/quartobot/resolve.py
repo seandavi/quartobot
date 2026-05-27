@@ -2,10 +2,20 @@
 
 `quartobot resolve` runs `manubot.cite` against a list of persistent-
 identifier cite keys (either passed as arguments or scanned out of a
-project) and writes the resulting CSL JSON to disk. The point isn't to
-replace what `pandoc-manubot-cite` does at render time — it's to do
-the network work on a developer's machine, ahead of push, so CI never
-sees a Crossref or PubMed hiccup.
+project) and writes the resulting bibliography to disk. The point
+isn't to replace what `pandoc-manubot-cite` does at render time — it's
+to do the network work on a developer's machine, ahead of push, so CI
+never sees a Crossref or PubMed hiccup.
+
+Two artifacts are produced by default:
+
+- ``references.resolved.bib`` — a BibLaTeX file pandoc consumes during
+  render. This is the file ``_quarto.yml`` lists under
+  ``bibliography:``. BibLaTeX is pandoc-citeproc's native bibliography
+  format and is the only one Quarto's ``manuscript`` project type
+  reads cleanly via its Google Scholar metadata post-process.
+- ``references.json`` — CSL JSON for an internal cache. Next resolve
+  reads this for cache hits and skips the network call.
 
 Hand-curated cite keys (no recognized prefix) are filtered out: those
 live in `references.bib` and pandoc citeproc handles them.
@@ -15,6 +25,8 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
+import subprocess
 import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
@@ -25,6 +37,9 @@ from quartobot.scan import scan_path
 
 STDOUT_SENTINEL = "-"
 """Output sentinel for streaming CSL JSON to stdout instead of a file."""
+
+DEFAULT_BIB_OUTPUT = "references.resolved.bib"
+"""Default filename for the BibLaTeX artifact pandoc reads at render."""
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +71,8 @@ class ResolveOutcome:
 
     resolutions: list[Resolution] = field(default_factory=list)
     output_path: Path | None = None
+    bib_output_path: Path | None = None
+    """Where the BibLaTeX artifact was written. None if not written."""
     entries_written: int = 0
     cache_hits: int = 0
     wrote_stdout: bool = False
@@ -121,6 +138,41 @@ def _standard_id_from_note(note: object) -> str | None:
     return None
 
 
+def _csljson_to_biblatex(csl_json_text: str) -> str:
+    """Convert CSL JSON text to BibLaTeX via ``pandoc``.
+
+    Pandoc converts CSL JSON to BibLaTeX cleanly in one shot and
+    incidentally coerces field types along the way — date-parts strings
+    become integer-typed dates, etc. — which sidesteps a class of bugs
+    where manubot's URL-metadata resolver returns string years.
+
+    Raises ``RuntimeError`` if ``pandoc`` isn't on PATH or fails.
+    """
+    pandoc = shutil.which("pandoc")
+    if pandoc is None:
+        raise RuntimeError(
+            "pandoc not found on PATH. quartobot resolve needs pandoc to "
+            "convert CSL JSON to BibLaTeX. Quarto bundles pandoc, but the "
+            "pre-render hook runs in a subprocess that may not have it on "
+            "PATH. Install pandoc (https://pandoc.org/installing.html) "
+            "or ensure Quarto's bundled pandoc is exposed."
+        )
+    try:
+        result = subprocess.run(
+            [pandoc, "-f", "csljson", "-t", "biblatex"],
+            input=csl_json_text,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"pandoc failed converting CSL JSON to BibLaTeX "
+            f"(exit {exc.returncode}): {exc.stderr.strip()}"
+        ) from exc
+    return result.stdout
+
+
 def _build_cache_index(items: Sequence[CSLItem]) -> dict[str, CSLItem]:
     """Index existing CSL items by their `standard_id` note.
 
@@ -141,6 +193,7 @@ def resolve_keys(
     *,
     cache_path: Path | None = None,
     output_path: Path | str | None = None,
+    bib_output_path: Path | str | None = None,
     dry_run: bool = False,
     log_level: str = "WARNING",
     id_mode: str = "short-hash",
@@ -151,9 +204,14 @@ def resolve_keys(
         keys: Cite keys in `prefix:identifier` form (no leading `@`).
         cache_path: Optional path to read previously-resolved entries
             from. Cache hits skip the network call.
-        output_path: Where to write the merged CSL JSON. A `Path` writes
-            to that file. The string `"-"` writes to stdout (no file
-            side effect). `None` skips writing entirely.
+        output_path: Where to write the merged CSL JSON cache. A `Path`
+            writes to that file. The string `"-"` writes to stdout (no
+            file side effect). `None` skips writing entirely.
+        bib_output_path: Where to write the BibLaTeX artifact that
+            pandoc reads at render. A `Path` writes to that file.
+            `None` (the default) skips the BibLaTeX write — used when
+            ``output_path`` is the stdout sentinel or when the caller
+            only wants the CSL JSON cache.
         dry_run: If True, don't make network calls — report what would
             be resolved.
         log_level: Manubot's logging verbosity for resolver failures.
@@ -297,6 +355,21 @@ def resolve_keys(
             file_output.write_text(serialized, encoding="utf-8")
         outcome.entries_written = len(merged)
 
+        # BibLaTeX side-output. Skipped in stdout mode (the one-shot
+        # piping use case) and when the caller hasn't asked for one.
+        # Empty bibliographies don't go through pandoc — its csljson
+        # reader rejects ``[]``.
+        if bib_output_path is not None and not stdout_mode and merged:
+            bib_path = (
+                bib_output_path
+                if isinstance(bib_output_path, Path)
+                else Path(bib_output_path)
+            )
+            bibtex = _csljson_to_biblatex(serialized)
+            bib_path.parent.mkdir(parents=True, exist_ok=True)
+            bib_path.write_text(bibtex, encoding="utf-8")
+            outcome.bib_output_path = bib_path
+
     return outcome
 
 
@@ -323,6 +396,12 @@ def format_outcome(outcome: ResolveOutcome) -> str:
         summary += f", {n_fail} failed"
     if outcome.wrote_stdout:
         summary += f". Wrote {outcome.entries_written} entries to stdout."
+    elif outcome.bib_output_path is not None and outcome.output_path is not None:
+        summary += (
+            f". Wrote {outcome.entries_written} entries to "
+            f"{outcome.bib_output_path} (BibLaTeX) and "
+            f"{outcome.output_path} (CSL JSON cache)."
+        )
     elif outcome.output_path is not None:
         summary += f". Wrote {outcome.entries_written} entries to {outcome.output_path}."
     lines.append(summary)
@@ -330,6 +409,7 @@ def format_outcome(outcome: ResolveOutcome) -> str:
 
 
 __all__: Sequence[str] = (
+    "DEFAULT_BIB_OUTPUT",
     "Resolution",
     "ResolveOutcome",
     "collect_resolvable_keys",

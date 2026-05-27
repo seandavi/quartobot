@@ -87,11 +87,11 @@ _TRAILING_PUNCT = ".,;:!?)"
 # Trailing `/` is legitimate *inside* a URL cite key (`https://host/path/`)
 # but pandoc's cite-key parser treats it as terminator punctuation and
 # drops it during parse. If we keep the slash and pandoc strips it, the
-# resolved id in `references.json` won't match the key pandoc-citeproc
-# looks up, and the citation silently degrades to `[?]`. Strip trailing
-# `/` from `@url:` keys at the scan boundary so the resolver-side and
-# the consumer-side agree. Manubot's resolver doesn't care — both forms
-# resolve to the same metadata. See issue #61.
+# resolved id in the generated bibliography won't match the key
+# pandoc-citeproc looks up, and the citation silently degrades to `[?]`.
+# Strip trailing `/` from `@url:` keys at the scan boundary so the
+# resolver-side and the consumer-side agree. Manubot's resolver doesn't
+# care — both forms resolve to the same metadata. See issue #61.
 _URL_PREFIX_RE = re.compile(r"^@?url:", re.IGNORECASE)
 
 

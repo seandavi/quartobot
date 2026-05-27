@@ -85,9 +85,23 @@ def scan(path: Path, recursive: bool) -> None:
     default="references.json",
     show_default=True,
     help=(
-        "Path to write the resolved CSL JSON bibliography to. Pass `-` "
-        "to stream JSON to stdout instead (no cache write happens in "
-        "stdout mode; the summary line goes to stderr)."
+        "Path to write the resolved CSL JSON cache to. Pass `-` to "
+        "stream JSON to stdout instead (no file writes happen in stdout "
+        "mode; the summary line goes to stderr). The CSL JSON cache is "
+        "for next-run cache hits — pandoc reads the BibLaTeX file from "
+        "--bib-output, not this one."
+    ),
+)
+@click.option(
+    "--bib-output",
+    type=str,
+    default="references.resolved.bib",
+    show_default=True,
+    help=(
+        "Path to write the BibLaTeX bibliography pandoc reads at "
+        "render. This is the file `_quarto.yml` should list under "
+        "`bibliography:`. Skipped automatically in stdout mode "
+        "(`--output -`)."
     ),
 )
 @click.option(
@@ -124,20 +138,26 @@ def resolve(
     keys: tuple[str, ...],
     from_scan: Path | None,
     output: str,
+    bib_output: str,
     cache: Path | None,
     dry_run: bool,
     id_mode: str,
     recursive: bool,
 ) -> None:
-    """Pre-fetch citations and write CSL JSON to disk.
+    """Pre-fetch citations and write the resolved bibliography to disk.
 
-    Resolves persistent-identifier cite keys via manubot.cite and writes
-    the resulting CSL JSON to --output (default `references.json`), or
-    to stdout when --output is `-`. The point isn't to replace what
-    manubot does at render — it's to do the network work on a
-    developer's machine ahead of push, so CI never sees a Crossref or
-    PubMed hiccup. Stdout mode is for one-shot lookups — agents and
-    scripts that want to pipe the JSON straight into `jq`.
+    Resolves persistent-identifier cite keys via manubot.cite. Writes
+    two artifacts by default: a BibLaTeX file at --bib-output (the one
+    pandoc reads at render — list this under `bibliography:` in
+    `_quarto.yml`), and a CSL JSON cache at --output (read on the next
+    resolve to skip the network call). Pass `--output -` to stream JSON
+    to stdout instead — the one-shot mode for agents and scripts that
+    pipe the JSON straight into `jq`. Stdout mode skips the BibLaTeX
+    write.
+
+    The point isn't to replace what manubot does at render — it's to
+    do the network work on a developer's machine ahead of push, so CI
+    never sees a Crossref or PubMed hiccup.
 
     Pass keys as arguments (`@doi:10.x/y pmid:12345`) or use --from-scan
     to resolve every persistent-identifier cite found in a project.
@@ -194,10 +214,18 @@ def resolve(
     else:
         cache_path = Path(output)
 
+    # BibLaTeX is skipped in stdout mode (one-shot piping). In file
+    # mode the default writes `references.resolved.bib`; callers can
+    # opt out with `--bib-output=""` or override the path.
+    bib_target: Path | None = None
+    if not stdout_mode and bib_output:
+        bib_target = Path(bib_output)
+
     outcome = resolve_keys(
         unique,
         cache_path=cache_path,
         output_path=output_target,
+        bib_output_path=bib_target,
         dry_run=dry_run,
         id_mode=id_mode,
     )
@@ -219,8 +247,10 @@ def validate(project: Path) -> None:
 
     Runs a battery of static config checks: `_quarto.yml` exists and
     declares `bibliography:`, `project.pre-render` calls
-    `quartobot resolve --id-mode citation-key`, `references.json`
-    is in the bibliography list, no duplicate cite keys across files.
+    `quartobot resolve --id-mode citation-key`, the resolved
+    bibliography (`references.resolved.bib`, or the legacy
+    `references.json`) is in the bibliography list, no duplicate cite
+    keys across files.
 
     Citation-resolution checks (does Crossref actually return metadata
     for this DOI?) are out of scope here — they need network. Run
@@ -777,7 +807,8 @@ def init(project: Path, project_type: str) -> None:
     Writes only what the citation pipeline needs: `_quarto.yml` (when
     absent) wired with the `quartobot resolve` pre-render hook and a
     `bibliography:` list, a seed `references.bib`, and `.gitignore`
-    augments so `references.json` stays out of the repo.
+    augments so the regenerated `references.resolved.bib` and the
+    CSL JSON cache stay out of the repo.
 
     Conservative — never overwrites existing files. If `_quarto.yml`
     already exists, prints a YAML snippet to merge in manually.
