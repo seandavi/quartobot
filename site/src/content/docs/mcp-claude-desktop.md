@@ -185,8 +185,8 @@ quarto render
 ```
 
 The pre-render hook fires, scans `index.qmd`, sees the two
-`@doi:...` keys, resolves them, and writes `references.json`.
-Pandoc-citeproc reads `references.json` and formats the
+`@doi:...` keys, resolves them, and writes `references.resolved.bib`.
+Pandoc-citeproc reads `references.resolved.bib` and formats the
 citations in the rendered HTML and PDF.
 
 Open `_output/index.html`. The cite keys you pasted now show as

@@ -79,16 +79,16 @@ pre-render hook declared in `_quarto.yml`:
 
 ```yaml
 project:
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 ```
 
 ```
-$ quartobot resolve --from-scan . --output references.json
+$ quartobot resolve --from-scan . --id-mode citation-key
   ✓ doi:10.1371/journal.pcbi.1007128 → YuJbg3zO
   ✓ pmid:31479462 → r3UbYxrJ
   ✓ arxiv:2104.10729 → OCxCvqZo (cached)
 
-3 resolved (1 from cache). Wrote 3 entries to references.json.
+3 resolved (1 from cache). Wrote 3 entries to references.resolved.bib.
 ```
 
 Pass keys as arguments (`quartobot resolve doi:10.x/y pmid:12345`) or
@@ -102,21 +102,25 @@ in the source directly. Without it, manubot's canonical short hash
 (`YuJbg3zO`) goes in `id` and pandoc-citeproc silently fails to match
 prose keys. The pre-render hook architecture depends on this flag.
 
-The `--cache` option defaults to `--output`, so re-runs are idempotent:
-the output file IS the cache. `--dry-run` reports what would be
-resolved without making any network calls.
+`resolve` writes two artifacts by default: `references.resolved.bib`
+(BibLaTeX, the file pandoc reads at render — list this under
+`bibliography:` in `_quarto.yml`) and `references.json` (CSL JSON
+cache, gitignored, read on the next resolve for cache hits). Override
+either with `--bib-output PATH` or `--output PATH`. The `--cache`
+option defaults to `--output`, so re-runs are idempotent. `--dry-run`
+reports what would be resolved without making any network calls.
 
 Pass `--output -` to stream the CSL JSON to stdout instead of a file —
 the one-shot lookup shape for shell-tool agents and scripts that pipe
-through `jq`:
+through `jq`. Stdout mode skips the BibLaTeX write:
 
 ```
 $ quartobot resolve --output - doi:10.1371/journal.pcbi.1007128 | jq '.[0].title'
 "Open collaborative writing with Manubot"
 ```
 
-In stdout mode the summary line goes to stderr and no cache write
-happens. Cache reads still work when `--cache <path>` is set
+In stdout mode the summary line goes to stderr and no file writes
+happen. Cache reads still work when `--cache <path>` is set
 explicitly.
 
 Exit codes:
@@ -134,9 +138,9 @@ before they reach a render.
 ```
 $ quartobot validate .
   ✓ _quarto.yml exists
-  ✓ bibliography declared — 2 file(s): references.bib, references.json
+  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib
   ✗ pre-render hook — `quartobot resolve` is invoked but `--id-mode citation-key` is missing. Without it, CSL `id`s are manubot's short hashes (`YuJbg3zO`), not the prose keys (`doi:10.1371/...`), and pandoc-citeproc silently fails to match any cites.
-  ✓ references.json in bibliography — `references.json` listed in `bibliography:`
+  ✓ resolved bibliography in `bibliography:` — `references.resolved.bib` listed in `bibliography:`
   ✓ no duplicate cite keys — 5 unique key(s) in 3 file(s)
 
 1 of 5 check(s) failed. Exit 1.
@@ -150,10 +154,11 @@ Checks run:
   The flag is load-bearing — without it, manubot's canonical short
   hashes replace the user's prose keys and pandoc-citeproc silently
   fails to match anything.
-- `references.json` appears in `bibliography:` — the most common
-  silent failure under the pre-render hook architecture, since
-  without it pandoc citeproc never reads what `quartobot resolve`
-  wrote.
+- `references.resolved.bib` appears in `bibliography:` — the most
+  common silent failure under the pre-render hook architecture,
+  since without it pandoc citeproc never reads what `quartobot
+  resolve` wrote. The legacy v0.3 `references.json` is accepted with
+  a migration hint.
 - No cite key appears in more than one file. Same-key-twice in the
   same file is the normal academic-writing case (one source, several
   claims) and is not flagged. The check is intentionally narrow:
@@ -193,7 +198,7 @@ To add the version banner + GitHub Actions CI, run `quartobot use github-ci` aft
 `init` writes only what the citation pipeline needs: `_quarto.yml`
 wired with the `quartobot resolve` pre-render hook and a
 `bibliography:` list, a seed `references.bib`, and a `.gitignore`
-augment so `references.json` (regenerated each render) stays out of
+augment so `references.resolved.bib` (regenerated each render) stays out of
 the repo. Three files, nothing else.
 
 Conservative — never overwrites existing files. If `_quarto.yml`

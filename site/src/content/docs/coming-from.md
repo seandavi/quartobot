@@ -143,11 +143,11 @@ uv tool install quartobot
 
 ```yaml
 project:
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib    # still here — hand-curated entries
-  - references.json   # new — auto-resolved entries
+  - references.resolved.bib   # new — auto-resolved entries
 ```
 
 Now you can write `@doi:10.1038/...` directly in prose and the entry

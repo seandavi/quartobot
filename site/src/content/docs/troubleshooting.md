@@ -81,7 +81,7 @@ hits the network for keys it hasn't seen before.
 
 Consequences:
 
-- **First render** writes `references.json` and needs network for
+- **First render** writes `references.resolved.bib` and needs network for
   every persistent-identifier key. On a paper with 50 DOIs this
   takes a few seconds.
 - **Subsequent renders** are network-free for keys already in the
@@ -146,7 +146,7 @@ pre-render line in `_quarto.yml`:
 project:
   pre-render: >-
     quartobot resolve --from-scan .
-    --output references.json
+    --id-mode citation-key
     --id-mode citation-key
 ```
 

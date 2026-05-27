@@ -75,15 +75,15 @@ The relevant `_quarto.yml` lines after `init`:
 ```yaml
 project:
   type: manuscript
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib
 ```
 
 Run `quarto render`. The hook resolves every cite key in every
-markdown cell, writes CSL JSON to `references.json`, and pandoc-citeproc
+markdown cell, writes CSL JSON to `references.resolved.bib`, and pandoc-citeproc
 formats the citations in the rendered output.
 
 ## What `quartobot scan` reports

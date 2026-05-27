@@ -202,7 +202,7 @@ template `quartobot init` writes already does:
 ```yaml
 bibliography:
   - references.bib    # hand-curated
-  - references.json   # auto-resolved by `quartobot resolve`
+  - references.resolved.bib   # auto-resolved by `quartobot resolve`
 ```
 
 If you had `manual-references.json` populated by manubot's resolver

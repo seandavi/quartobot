@@ -38,7 +38,7 @@ Asserts `_quarto.yml` declares a `bibliography:` key. Without it,
 citeproc has nowhere to read CSL entries from and citations don't
 render. Most common cause: a new project scaffolded outside
 `quartobot init`. Add the key at the top level — `init` writes
-`references.bib` and `references.json` by default.
+`references.bib` and `references.resolved.bib` by default.
 
 ### `pre-render hook`
 
@@ -49,16 +49,18 @@ your prose keys (`doi:10.1371/...`), and pandoc-citeproc silently
 fails to match any cite. Most common cause: the line was edited by
 hand and the flag got dropped.
 
-### `references.json in bibliography`
+### `resolved bibliography in `bibliography:``
 
-Asserts the pre-render hook's output file (`references.json` by
-default) is listed under `bibliography:`. This is the check that
+Asserts the pre-render hook's BibLaTeX output (`references.resolved.bib`
+by default) is listed under `bibliography:`. This is the check that
 bites everyone at least once. The pre-render hook writes the file
 regardless; if citeproc isn't told to read it, the resolved entries
 don't reach the rendered document. Most common cause: someone
-removed `references.json` from `bibliography:` thinking it was an
-auto-generated artifact that didn't belong in config. It is
+removed `references.resolved.bib` from `bibliography:` thinking it
+was an auto-generated artifact that didn't belong in config. It is
 auto-generated, but citeproc still needs to be told where to read it.
+The legacy v0.3 `references.json` is also accepted for back-compat
+with a migration hint in the detail string.
 
 ### `no duplicate cite keys`
 
@@ -71,14 +73,14 @@ across chapters and the cite came along with it.
 
 ## Worked failure cases
 
-### Missing `references.json` in `bibliography:`
+### Missing `references.resolved.bib` in `bibliography:`
 
 ```
 $ quartobot validate .
   ✓ _quarto.yml exists
   ✓ bibliography declared — 1 file(s): references.bib
   ✓ pre-render hook — `quartobot resolve --id-mode citation-key` declared
-  ✗ references.json in bibliography — `references.json` is not in `bibliography:` (['references.bib']). Citeproc won't read the resolved entries the pre-render hook writes there.
+  ✗ resolved bibliography in `bibliography:` — `references.resolved.bib` is not in `bibliography:` (['references.bib']). Citeproc won't read the resolved entries the pre-render hook writes.
   ✓ no duplicate cite keys — 5 unique key(s) in 1 file(s)
 
 1 of 5 check(s) failed. Exit 1.
@@ -89,12 +91,12 @@ Fix it with a one-line edit to `_quarto.yml`:
 ```yaml
 bibliography:
   - references.bib    # hand-curated
-  - references.json   # auto-resolved by `quartobot resolve`
+  - references.resolved.bib   # auto-resolved by `quartobot resolve`
 ```
 
 Why it matters: pandoc-citeproc reads every file in the
 `bibliography:` list and builds one combined database. The pre-render
-hook writes resolved entries to `references.json` whether or not
+hook writes resolved entries to `references.resolved.bib` whether or not
 citeproc reads them. Drop the file from the list and the render
 succeeds with every `@doi:` cite landing as `[Unresolved citation]` —
 the silent-failure mode this check exists to prevent.
@@ -104,9 +106,9 @@ the silent-failure mode this check exists to prevent.
 ```
 $ quartobot validate .
   ✓ _quarto.yml exists
-  ✓ bibliography declared — 2 file(s): references.bib, references.json
+  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib
   ✓ pre-render hook — `quartobot resolve --id-mode citation-key` declared
-  ✓ references.json in bibliography — `references.json` listed in `bibliography:`
+  ✓ resolved bibliography in `bibliography:` — `references.resolved.bib` listed in `bibliography:`
   ✗ no duplicate cite keys — 1 key(s) appear across multiple files (e.g. @doi:10.1371/journal.pone.0123456 (2 files))
 
 1 of 5 check(s) failed. Exit 1.

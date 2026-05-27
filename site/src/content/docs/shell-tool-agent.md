@@ -104,9 +104,9 @@ quartobot validate .
 
 ```
   ✓ _quarto.yml exists
-  ✓ bibliography declared — 2 file(s): references.bib, references.json
+  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib
   ✓ pre-render hook — `quartobot resolve` invoked with --id-mode citation-key
-  ✓ references.json in bibliography — listed under `bibliography:`
+  ✓ resolved bibliography in `bibliography:` — listed under `bibliography:`
   ✓ no duplicate cite keys — 5 unique key(s) in 3 file(s)
 
 5 of 5 checks passed.
@@ -187,9 +187,9 @@ to `methods.qmd`. After writing the edit, the agent runs
 agent shells →
   $ quartobot validate .
   ✓ _quarto.yml exists
-  ✓ bibliography declared — 2 file(s): references.bib, references.json
+  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib
   ✓ pre-render hook — `quartobot resolve` invoked with --id-mode citation-key
-  ✓ references.json in bibliography
+  ✓ resolved bibliography in `bibliography:`
   ✗ no duplicate cite keys — @doi:10.21105/joss.01686 appears in 2 file(s):
       intro.qmd:14
       methods.qmd:42

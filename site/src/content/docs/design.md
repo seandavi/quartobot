@@ -47,7 +47,7 @@ explicitly ruled out, what changed our minds during the working sessions.
 
 [`docs/citation-pipeline.md`](https://github.com/seandavi/quartobot/blob/main/docs/citation-pipeline.md)
 covers the settled architecture: `_quarto.yml` declares
-`project.pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key`,
+`project.pre-render: quartobot resolve --from-scan . --id-mode citation-key`,
 the hook runs before pandoc, and pandoc-citeproc reads the resulting
 CSL JSON directly. No filter, no `_extensions/`, no `quarto add` step.
 
