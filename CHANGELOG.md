@@ -22,6 +22,15 @@ JATS sidecar along for free.
   manuscript output directory (default `_manuscript`, overridable via
   the new `manuscript-output-dir` input) wholesale when it exists,
   falling back to per-format root lookup for default-typed projects.
+- `actions/render-manuscript` looped over formats and invoked
+  `quarto render --to <fmt>` once per format. For `type: manuscript`
+  projects each invocation wipes `_manuscript/` before writing its
+  output, so all but the last format silently disappeared. The action
+  now detects manuscript-typed projects (`type: manuscript` in
+  `_quarto.yml`) and uses a single `quarto render` invocation, which
+  is the Quarto-native pattern and produces every configured format
+  at once. Default-typed projects keep the per-format loop (preserves
+  PDF heartbeats and per-format `render-<fmt>.log` artifacts).
 
 ### Added
 
