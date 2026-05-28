@@ -132,7 +132,7 @@ quartobot:
     on_over_budget: fail      # `fail` (default) or `warn`
 ```
 
-See [Differences from manubot](../differences-from-manubot/) for
+See [Differences from manubot](differences-from-manubot.qmd) for
 the full design rationale on the retention model.
 
 ## Composite actions
@@ -251,12 +251,12 @@ can be invoked by Quarto without further configuration.
 
 ## See also
 
-- [CLI reference](../cli/) — `quartobot use github-ci` is the
+- [CLI reference](cli.qmd) — `quartobot use github-ci` is the
   scaffolder that writes a consumer workflow against one of the
   reusable workflows above.
-- [First manuscript in 15 minutes](../first-manuscript/) — the
+- [First manuscript in 15 minutes](first-manuscript.qmd) — the
   guided walkthrough that uses the default lean workflow end-to-end.
-- [Differences from manubot](../differences-from-manubot/) — design
+- [Differences from manubot](differences-from-manubot.qmd) — design
   rationale on the lean-default and the retention policy.
-- [Troubleshooting](../troubleshooting/) — when the canonical path
+- [Troubleshooting](troubleshooting.qmd) — when the canonical path
   breaks.

@@ -26,7 +26,7 @@ You need:
 - **Claude Desktop** — [download here](https://claude.ai/download)
   if you don't have it. Free tier is fine.
 - **Optional but recommended:** an existing quartobot manuscript,
-  scaffolded per the [first-manuscript tutorial](../first-manuscript/).
+  scaffolded per the [first-manuscript tutorial](first-manuscript.qmd).
   The tutorial works fine without one if you just want to see the
   resolver in action — the last two steps assume one.
 
@@ -211,9 +211,9 @@ drift between what the agent saw and what the renderer wrote.
 
 ## See also
 
-- [MCP server reference](../mcp/) — the `scan_project` and
+- [MCP server reference](mcp.qmd) — the `scan_project` and
   `validate_project` tools you didn't use here, setup snippets
   for Codex and Gemini Code Assist, and the explicit scope-out
   list (no write tools, no HTTP transport).
-- [First manuscript tutorial](../first-manuscript/) — if you
+- [First manuscript tutorial](first-manuscript.qmd) — if you
   want the rendering and CI half too.

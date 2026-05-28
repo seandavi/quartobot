@@ -1,0 +1,134 @@
+/*-- scss:defaults --*/
+
+// Typography — a slightly more relaxed reading column than cosmo's
+// default. The narrow column hurts long-form prose with code blocks.
+$font-family-sans-serif: "Inter", -apple-system, BlinkMacSystemFont,
+  "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-family-monospace: "JetBrains Mono", "SF Mono", Menlo, Consolas,
+  "Liberation Mono", monospace;
+$body-color-light: #1f2328;
+$body-color-dark: #e6edf3;
+
+// Brand: a calmer blue than cosmo's default cobalt, less saturated
+// for body links so the prose doesn't shout.
+$primary: #2563eb;
+$link-color: $primary;
+
+// Code: GitHub-flavoured background for inline + blocks.
+$code-bg: #f6f8fa;
+$code-color: #d63384;
+
+// Borders + shadows: very subtle, the docs body should feel calm.
+$border-color: #d0d7de;
+
+/*-- scss:rules --*/
+
+// Slightly larger root font for long-form readability.
+html { font-size: 17px; }
+
+// Wider reading column for body prose but not the navbar/footer.
+.quarto-container .content {
+  max-width: 980px;
+}
+
+// Navbar refinements — make the title chip readable when there's no
+// text title (logo-only mode).
+.navbar-brand {
+  padding: 0.25rem 0.5rem;
+}
+.navbar-brand img {
+  height: 32px;
+  width: auto;
+}
+
+// Sidebar — tighten the spacing so longer lists don't dominate.
+.sidebar nav[role="doc-toc"] ul,
+.sidebar-navigation ul {
+  font-size: 0.95rem;
+}
+
+// Sidebar sections get a touch more weight.
+.sidebar-item-section .sidebar-item-text {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+// Inline code: a hint of border instead of pure background so it
+// reads as a token, not as highlight.
+code:not(pre code) {
+  padding: 0.12em 0.4em;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+// Code blocks: a subtle border + slightly rounded corners. The
+// default cosmo card-look is fine; this just refines edges.
+div.sourceCode {
+  border: 1px solid var(--bs-border-color, #d0d7de);
+  border-radius: 6px;
+}
+
+// Callouts (Quarto's equivalent of Starlight's Aside) — a little
+// less heavy. Cosmo's default callout is fine but the left border
+// is thick.
+div.callout {
+  border-left-width: 4px;
+  border-radius: 6px;
+}
+
+// "Edit page" / "Report an issue" repo-action links: subtle, right
+// where Starlight had them.
+.quarto-section-identifier,
+.quarto-page-footer { font-size: 0.9rem; }
+
+// Hero landing page — see index.qmd. The grid cards should breathe.
+.hero-banner {
+  padding: 3rem 1rem 2rem;
+  text-align: center;
+}
+.hero-banner h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero-banner .lead {
+  font-size: 1.2rem;
+  max-width: 720px;
+  margin: 1rem auto 1.5rem;
+  color: var(--bs-secondary-color);
+}
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+.hero-actions .btn {
+  padding: 0.6rem 1.25rem;
+  font-weight: 500;
+}
+
+// Feature cards on the landing.
+.feature-card {
+  padding: 1.5rem;
+  border: 1px solid var(--bs-border-color, #d0d7de);
+  border-radius: 8px;
+  height: 100%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.feature-card h3 {
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+.feature-card p {
+  font-size: 0.95rem;
+  color: var(--bs-secondary-color);
+  margin-bottom: 0;
+}

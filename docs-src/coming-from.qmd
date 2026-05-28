@@ -89,12 +89,12 @@ under the hood. Your prose is mostly portable.
   project. The manubot-specific HTML niceties (contribution
   statements, ORCID badges, social-card metadata) need to be
   re-implemented as Quarto includes or filters. The
-  [Migrate from manubot](../migrating-from-manubot/) guide covers the
+  [Migrate from manubot](migrating-from-manubot.qmd) guide covers the
   field-by-field mapping.
 - Citation resolution happens via a Quarto pre-render hook, not via
   the `pandoc-manubot-cite` filter. The seam is structurally cleaner
   — no pandoc version constraints, no PATH-at-render-time concerns.
-  See [Differences from manubot](../differences-from-manubot/) for
+  See [Differences from manubot](differences-from-manubot.qmd) for
   the full mechanical comparison.
 - **Caching is the default.** `references.json` *is* the cache; commit
   it and CI never hits Crossref. manubot's default is no cache, so
@@ -189,9 +189,9 @@ layers don't interfere.
 **Pre-quartobot lift:** essentially zero. You're already comfortable
 with Quarto; this is a one-line addition.
 
-See [first manuscript in 15 minutes](../first-manuscript/) for the
+See [first manuscript in 15 minutes](first-manuscript.qmd) for the
 guided walkthrough; the "existing Quarto project" path in
-[choose a path in](../getting-started/) is the minimum-friction option.
+[choose a path in](getting-started.qmd) is the minimum-friction option.
 
 ## Coming from Zotero
 
@@ -278,10 +278,10 @@ A few honest signals that another tool may fit better:
 
 ## See also
 
-- [First manuscript in 15 minutes](../first-manuscript/) — the
+- [First manuscript in 15 minutes](first-manuscript.qmd) — the
   canonical guided walkthrough, with all the prerequisites assumed.
-- [Choose a path in](../getting-started/) — three minimum-friction
+- [Choose a path in](getting-started.qmd) — three minimum-friction
   paths for "new manuscript," "existing Quarto project," and "I just
   want auto-resolved citations."
-- [Differences from manubot](../differences-from-manubot/) — the
+- [Differences from manubot](differences-from-manubot.qmd) — the
   detailed mechanical comparison for users porting from manubot.

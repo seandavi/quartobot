@@ -1,30 +1,137 @@
-# Quarto source for select Starlight pages where the dogfood story
-# earns its keep: pages with academic citations or live `quartobot`
-# CLI output. Quarto runs the quartobot pre-render hook here too —
-# this project resolves its own citations through the same pipeline
-# the documented manuscripts use.
-#
-# Rendered output lands in Starlight's content collection at
-# ../site/src/content/docs/; Astro picks it up as plain markdown
-# (citations already formatted by pandoc-citeproc).
-#
-# Keep this scope narrow. The whole docs site stays markdown-first.
-# Only pages where live execution or formatted citations earn the
-# build-cost should move here.
-
 project:
-  type: default
-  output-dir: ../site/src/content/docs/
-  pre-render: quartobot resolve --from-scan . --output references.json --id-mode citation-key
+  type: website
+  output-dir: _site
+  # Resolve `@doi:`/`@pmid:`/`@arxiv:` citations on every render —
+  # quartobot dogfooding itself, the same hook the documented
+  # manuscripts use.
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
+  resources:
+    - "logo.svg"
+    - "favicon.svg"
   render:
-    - first-manuscript.qmd
+    - "*.qmd"
+    - "!fixtures/"
+    - "!scripts/"
+    - "!_site/"
+
+website:
+  title: "quartobot"
+  description: "Citation resolution and manuscript-as-software CI for Quarto."
+  site-url: "https://seandavi.github.io/quartobot/"
+  repo-url: "https://github.com/seandavi/quartobot"
+  repo-branch: main
+  repo-subdir: docs-src
+  repo-actions: [edit, issue]
+  favicon: favicon.svg
+  twitter-card: true
+  open-graph: true
+  search:
+    location: navbar
+    type: overlay
+
+  navbar:
+    background: primary
+    pinned: true
+    logo: logo.svg
+    title: false
+    left:
+      - text: "Install"
+        href: install.qmd
+      - text: "First manuscript"
+        href: first-manuscript.qmd
+      - text: "Reference"
+        menu:
+          - text: "CLI"
+            href: cli.qmd
+          - text: "Workflows and actions"
+            href: workflows-and-actions.qmd
+      - text: "Explanation"
+        menu:
+          - text: "Design"
+            href: design.qmd
+          - text: "Differences from manubot"
+            href: differences-from-manubot.qmd
+    right:
+      - icon: github
+        href: https://github.com/seandavi/quartobot
+        aria-label: GitHub
+
+  sidebar:
+    style: floating
+    collapse-level: 2
+    contents:
+      - text: "Home"
+        href: index.qmd
+      - text: "Install"
+        href: install.qmd
+      - text: "Coming from…"
+        href: coming-from.qmd
+      - section: "Tutorials"
+        contents:
+          - text: "First manuscript (15 min)"
+            href: first-manuscript.qmd
+          - text: "MCP + Claude Desktop"
+            href: mcp-claude-desktop.qmd
+          - text: "Shell-tool agent"
+            href: shell-tool-agent.qmd
+      - section: "How-to guides"
+        contents:
+          - text: "Choose a path in"
+            href: getting-started.qmd
+          - text: "Deploy to GitHub Pages"
+            href: deploying.qmd
+          - text: "Resolve a single citation"
+            href: resolve-single-citation.qmd
+          - text: "Use a Quarto website"
+            href: quarto-websites.qmd
+          - text: "Use a Quarto book"
+            href: quarto-books.qmd
+          - text: "Use Jupyter notebooks"
+            href: jupyter-notebooks.qmd
+          - text: "MCP server"
+            href: mcp.qmd
+          - text: "Migrate from manubot"
+            href: migrating-from-manubot.qmd
+          - text: "Validate a manuscript"
+            href: validate-manuscript.qmd
+          - text: "Troubleshooting"
+            href: troubleshooting.qmd
+      - section: "Reference"
+        contents:
+          - text: "CLI"
+            href: cli.qmd
+          - text: "Workflows and actions"
+            href: workflows-and-actions.qmd
+      - section: "Explanation"
+        contents:
+          - text: "Design"
+            href: design.qmd
+          - text: "Differences from manubot"
+            href: differences-from-manubot.qmd
+
+  page-footer:
+    left: "© 2026 Sean Davis · MIT license"
+    right:
+      - icon: github
+        href: https://github.com/seandavi/quartobot
 
 format:
-  # Quarto's gfm output strips YAML frontmatter regardless of keep-yaml
-  # (which the format doesn't honor). docs-src/scripts/post-render.py
-  # owns frontmatter injection — single source of truth.
-  gfm: default
+  html:
+    theme:
+      light: [cosmo, custom.scss]
+      dark: [darkly, custom.scss]
+    toc: true
+    toc-depth: 3
+    toc-location: right
+    code-copy: true
+    code-overflow: wrap
+    code-link: true
+    highlight-style: github
+    smooth-scroll: true
+    link-external-newwindow: true
+    link-external-icon: true
+    anchor-sections: true
 
 bibliography:
   - references.bib
-  - references.json
+  - references.resolved.bib

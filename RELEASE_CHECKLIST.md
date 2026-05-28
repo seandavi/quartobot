@@ -66,28 +66,16 @@ The most common source of release-time embarrassment.
       repo moved between owners.)
 - [ ] **Version numbers in install snippets match the release.** If
       docs say `uv tool install quartobot==0.2.0` anywhere, bump.
-- [ ] **`docs-src/*.qmd` and `site/src/content/docs/*.md` in sync.**
-      `docs-src/first-manuscript.qmd` is the source of truth;
-      `site/src/content/docs/first-manuscript.md` is rendered output.
-      Either render locally (`cd docs-src && quarto render`) or trust
-      CI to re-render on the release commit.
 - [ ] **CHANGELOG entries reference real PR/issue numbers**, not
       placeholder `#TBD`.
-- [ ] **Site builds clean.** `cd site && npm run build`
-- [ ] **Link-check passes against the built site.** Either trust CI
-      (`docs-link-check.yml`) or run locally:
-      ```bash
-      cd site && (npm run preview -- --host 127.0.0.1 --port 4321 &)
-      sleep 5
-      npx linkinator http://127.0.0.1:4321/quartobot/ \
-        --recurse --skip "^https?://(?!127\\.0\\.0\\.1)" --verbosity error
-      pkill -f "astro preview"
-      ```
-      <br>*Common breakage:* Starlight resolves `./page/` relative to
-      the current page's slug, not the docs directory. From
-      `coming-from.md`, `./troubleshooting/` resolves to
-      `/quartobot/coming-from/troubleshooting/` (404). Use
-      `../page/` for sibling-page references. (v0.3 lesson.)
+- [ ] **Docs site renders clean locally.** `cd docs-src && quarto
+      render`. The Quarto website at `docs-src/_site/` should build
+      without errors and without warnings about missing files.
+      `publish-docs.yml` runs the same `quarto publish gh-pages`
+      step on push to main, so a clean local render is a good
+      proxy for the CI publish step. (v0.6.0 lesson — switched
+      from Starlight to a Quarto website; the qmd source IS the
+      source of truth now, no separate rendered markdown layer.)
 
 ## 6. Tag and publish
 

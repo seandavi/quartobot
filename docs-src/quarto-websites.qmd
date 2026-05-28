@@ -177,7 +177,7 @@ list at all. That's pandoc-citeproc's default, not quartobot's.
 
 ## See also
 
-- [First manuscript tutorial](../first-manuscript/) — the same
+- [First manuscript tutorial](first-manuscript.qmd) — the same
   pattern, single-page project.
-- [CLI reference: `resolve`](../cli/#quartobot-resolve) — full flag
+- [CLI reference: `resolve`](cli.qmd#quartobot-resolve) — full flag
   surface for the pre-render command.

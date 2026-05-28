@@ -1,0 +1,296 @@
+---
+title: "quartobot"
+description: "Write `@doi:...` directly in Quarto prose. quartobot resolves each citation from Crossref, PubMed, arXiv, and other identifier sources at render time."
+toc: false
+page-layout: full
+title-block-banner: false
+---
+
+::: hero-banner
+# Citation resolution for Quarto
+
+::: lead
+Write `@doi:…`, `@pmid:…`, or `@arxiv:…` directly in your Quarto
+prose. quartobot resolves each citation from Crossref, PubMed,
+arXiv, and other identifier sources at render time — no separate
+BibTeX file to hand-maintain.
+:::
+
+::: hero-actions
+[First manuscript in 15 min](first-manuscript.qmd){.btn .btn-primary .btn-lg}
+[View on GitHub](https://github.com/seandavi/quartobot){.btn .btn-outline-secondary .btn-lg}
+:::
+:::
+
+::: {.callout-note appearance="simple" icon=false}
+**For Quarto authors who'd rather write `@doi:…` than hand-maintain a BibTeX file.**
+:::
+
+## What you write, what renders {.unnumbered}
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-5}
+**What you write**
+
+```markdown
+The tidyverse [@doi:10.21105/joss.01686] is a
+coherent grammar for data manipulation across
+a family of R packages.
+```
+:::
+
+::: {.g-col-12 .g-col-md-2 .text-center .align-self-center}
+→
+:::
+
+::: {.g-col-12 .g-col-md-5}
+**What renders**
+
+> The tidyverse (Wickham et al. 2019) is a coherent
+> grammar for data manipulation across a family of
+> R packages.
+>
+> **References**
+>
+> Wickham, H., et al. (2019). Welcome to the
+> Tidyverse. *Journal of Open Source Software*,
+> 4(43), 1686.
+:::
+
+:::
+
+Slots into any Quarto project — manuscripts, books, websites, and
+Quarto's native `project: type: manuscript`. One line in
+`_quarto.yml`; no Lua filter, no `quarto add`, no `_extensions/`.
+
+```bash
+uv tool install quartobot
+```
+
+Then [first manuscript in 15 minutes →](first-manuscript.qmd) walks
+the whole flow: scaffold, write, render, push, deploy.
+
+---
+
+# Four composable layers {.unnumbered}
+
+Adopt one, stack any subset — they don't require each other.
+
+## Layer 1 · the atom · Resolve a citation
+
+*If you just need DOI / PMID / arXiv metadata at the shell.*
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-7}
+Hand quartobot a persistent-identifier key — `doi:`, `pmid:`,
+`arxiv:`, `isbn:`, `url:`, `wikidata:`, `pmc:` — and get back CSL
+JSON on stdout. Pipes cleanly through `jq` or any agent's shell
+tool. The resolver is `manubot.cite.citekey_to_csl_item`
+underneath; eight years of source-API quirks behind one call.
+
+[How to resolve a single citation →](resolve-single-citation.qmd)
+:::
+
+::: {.g-col-12 .g-col-md-5}
+```bash
+quartobot resolve --output - doi:10.21105/joss.01686 \
+  | jq '.[0].title'
+# → "Welcome to the Tidyverse"
+```
+:::
+
+:::
+
+::: {.callout-tip appearance="simple"}
+Done — you have a single-key metadata lookup tool. Stop here or
+stack on Layer 2.
+:::
+
+## Layer 2 · the manuscript · Resolve in the render loop
+
+*If you author Quarto manuscripts, books, or websites.*
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-5}
+```yaml
+# _quarto.yml
+project:
+  pre-render: >-
+    quartobot resolve --from-scan .
+    --id-mode citation-key
+
+bibliography:
+  - references.bib
+  - references.resolved.bib
+```
+:::
+
+::: {.g-col-12 .g-col-md-7}
+One line in `_quarto.yml` makes `quartobot resolve` run before
+pandoc on every render. Authors write `@doi:…` directly in prose;
+the hook fetches each key, writes BibLaTeX to
+`references.resolved.bib`, and pandoc-citeproc formats the rendered
+output. Network only on first render; cached after. Hand-curated
+entries in `references.bib` work alongside, for the keys the
+resolver can't reach.
+
+[First manuscript in 15 minutes →](first-manuscript.qmd)
+:::
+
+:::
+
+::: {.callout-tip appearance="simple"}
+Done — your manuscript builds itself with resolved citations. Stop
+here or stack on Layer 3.
+:::
+
+## Layer 3 · the agent · Ground AI-assisted drafting
+
+*If you draft with Claude Desktop, Codex, Gemini, Cursor, or any
+agent harness with a shell.*
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-7}
+If your manuscript renders citations from persistent identifiers,
+your AI drafting tools should look them up the same way. Two
+surfaces, same resolver: `quartobot mcp` exposes
+`resolve_citation`, `scan_project`, and `validate_project` as MCP
+tools for native MCP clients. For agents that already live in a
+shell, `quartobot resolve --output -` is the same call piped
+through stdout — equally good, sometimes preferred for portability
+and composition with `jq`. Either way, an agent checks every cite
+key it proposes against the source registrar before that cite
+reaches your draft.
+
+[MCP + Claude Desktop →](mcp-claude-desktop.qmd) ·
+[Shell-tool agents →](shell-tool-agent.qmd)
+:::
+
+::: {.g-col-12 .g-col-md-5}
+```json
+// ~/Library/Application Support/Claude/
+//   claude_desktop_config.json
+{
+  "mcpServers": {
+    "quartobot": {
+      "command": "quartobot",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+:::
+
+:::
+
+::: {.callout-note appearance="simple"}
+**Same call, same answer.** An agent that routes its proposed cite
+keys through quartobot gets back source-registrar metadata —
+Crossref for DOIs, PubMed for PMIDs, arXiv for preprints — using
+the same resolver your manuscript renders with. Agent metadata and
+rendered metadata can't drift apart.
+:::
+
+## Layer 4 · the publication · Citations resolve in CI; reviewers preview in the PR
+
+*If you publish a manuscript to GitHub Pages and want PR previews +
+a versions page out of the box.*
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-5}
+```bash
+quartobot use github-ci
+# scaffolds:
+#   .github/workflows/render.yml
+#   .github/workflows/pr-closed.yml
+# uses the lean reusable workflow.
+# add --with-versioned-snapshots for the
+# per-commit /v/<sha>/ permalink layer.
+```
+:::
+
+::: {.g-col-12 .g-col-md-7}
+`quartobot use github-ci` scaffolds a thin GitHub Actions workflow
+that does three things: installs Quarto and quartobot on the runner
+so the citation pre-render hook works in CI, renders the manuscript
+on every push, and posts a sticky PR comment with the preview URL
+on every PR. A generated `/versions/` page lists tagged releases
+and open PR previews. No banner injection, no per-commit deploys by
+default — just the latest at `/`, PR previews at `/pr/<n>/`, and
+the versions page as the discoverability surface.
+
+[First manuscript, step 7 →](first-manuscript.qmd#7-add-the-publish-on-every-commit-ci)
+:::
+
+:::
+
+::: {.callout-note appearance="simple"}
+**Reviewers see exactly what your branch renders to.** The sticky
+PR comment links to a live preview of the manuscript at
+`/pr/<n>/` — no local checkout, no "but it works on my machine,"
+no version drift between what reviewers read and what merges.
+:::
+
+---
+
+# Where to go next {.unnumbered}
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
+::: feature-card
+### I just need a citation
+
+[Resolve a single citation](resolve-single-citation.qmd) — one
+persistent-identifier key in, CSL JSON out. CLI or MCP.
+:::
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
+::: feature-card
+### I'm writing a Quarto manuscript
+
+[First manuscript in 15 min](first-manuscript.qmd) walks the
+canonical path end-to-end: install, scaffold, write, render, push,
+deploy.
+:::
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
+::: feature-card
+### I'm building agent-assisted authoring
+
+[MCP + Claude Desktop](mcp-claude-desktop.qmd) and
+[Shell-tool agent](shell-tool-agent.qmd) cover both surfaces
+quartobot exposes.
+:::
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
+::: feature-card
+### I want the design rationale
+
+[Design](design.qmd) collects the architecture decisions and the
+prior art — why a pre-render hook, why CSL JSON, why the sticky PR
+comment.
+:::
+:::
+
+:::
+
+---
+
+Maintained by [Sean Davis](https://github.com/seandavi).
+Contributions welcome — [open an
+issue](https://github.com/seandavi/quartobot/issues/new) or [browse
+open PRs](https://github.com/seandavi/quartobot/pulls). Every page
+has an "Edit page" link at the top for typo-grade fixes.
+
+*quartobot is an independent community project. It builds on Quarto
+but is not affiliated with or endorsed by Posit, PBC, the makers of
+Quarto.*

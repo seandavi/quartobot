@@ -18,11 +18,18 @@ dist/
 .coverage
 htmlcov/
 
-# Quarto (when example projects accumulate)
+# Quarto outputs and caches
 _output/
 _freeze/
+_site/
+_manuscript/
 .quarto/
 *_files/
+
+# References resolved by the quartobot pre-render hook (regenerated
+# on every render — don't commit).
+references.resolved.bib
+references.json
 
 # Claude Code session artifacts (worktrees, plans, etc.)
 .claude/
@@ -30,11 +37,6 @@ _freeze/
 # graphify knowledge-graph output cache
 graphify-out/
 
-# Generated docs (rendered by Quarto from docs-src/*.qmd into Starlight)
-site/src/content/docs/first-manuscript.md
-docs-src/references.json
-docs-src/_freeze/
-docs-src/.quarto/
 
 # Playwright MCP screenshot artifacts
 .playwright-mcp/

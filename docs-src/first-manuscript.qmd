@@ -14,7 +14,7 @@ TinyTeX the first time it sees a PDF format. After that, every
 render is fast.
 
 You will not learn *why* the design choices are this way — that's
-the [Design](../design/) and
+the [Design](design.qmd) and
 [Citation pipeline](https://github.com/quartobot/quartobot/blob/main/docs/citation-pipeline.md)
 pages' job. This tutorial is doing, not understanding.
 
@@ -62,7 +62,7 @@ uv tool install quartobot
 This puts `quartobot` on your user `PATH` so Quarto's pre-render
 subprocess can find it without venv activation. Confirm:
 
-```{bash}
+```bash
 #| echo: true
 quartobot --version
 ```
@@ -131,7 +131,7 @@ arXiv, PubMed). Save the file.
 Before rendering, ask quartobot what citations it sees. The same
 prose you just wrote, scanned by `quartobot scan`:
 
-```{bash}
+```bash
 #| echo: true
 quartobot scan fixtures/sample-paper/
 ```
@@ -188,7 +188,7 @@ pipeline from step 3 works the same either way.
 
 For the full set of inputs you can override on the scaffolded
 workflow (formats, manuscript-name, quarto-version, project-title,
-etc.), see [Workflows and actions](../workflows-and-actions/) in
+etc.), see [Workflows and actions](workflows-and-actions.qmd) in
 the Reference section. Same page covers the composite actions if
 you'd rather compose your own workflow instead.
 
@@ -255,12 +255,12 @@ its own `/v/<sha>/` permalink alongside the latest.
 
 ## Where to next
 
-- [CLI reference](../cli/) — every command, every flag.
-- [MCP server](../mcp/) — point Claude Desktop, Codex, or Gemini
+- [CLI reference](cli.qmd) — every command, every flag.
+- [MCP server](mcp.qmd) — point Claude Desktop, Codex, or Gemini
   Code Assist at `quartobot mcp` so an agent can call the
   `resolve_citation` tool while you draft.
-- [Migrating from manubot](../migrating-from-manubot/) — if you have
+- [Migrating from manubot](migrating-from-manubot.qmd) — if you have
   a manubot manuscript and want to translate the layout.
-- [Design](../design/) — the architecture decisions and prior art.
+- [Design](design.qmd) — the architecture decisions and prior art.
 
 ## References

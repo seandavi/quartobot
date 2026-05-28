@@ -45,7 +45,7 @@ quartobot resolve --output - doi:10.1101/460147 | jq '.[0].title'
 
 Bare DOIs (no `doi:` prefix) work too. `url:`, `wikidata:`, `isbn:`,
 and `pmc:` are also valid. See
-[CLI reference: `resolve`](../cli/#quartobot-resolve) for the full
+[CLI reference: `resolve`](cli.qmd#quartobot-resolve) for the full
 flag surface (`--from-scan`, `--id-mode`, `--cache`, `--dry-run`).
 
 ## MCP: `resolve_citation` tool
@@ -67,7 +67,7 @@ A leading `@` or trailing pandoc-terminator punctuation (`/`, `.`,
 `,`) is normalized away, so the tool is forgiving about the exact
 shape the agent extracts from prose.
 
-See [MCP server](../mcp/) for the full per-client config (Claude
+See [MCP server](mcp.qmd) for the full per-client config (Claude
 Desktop, Codex, Gemini Code Assist, Cursor).
 
 ## Errors
@@ -110,6 +110,6 @@ source-API quirks behind one call.
 
 ## See also
 
-- [CLI reference: `resolve`](../cli/#quartobot-resolve) — the full flag surface.
-- [MCP server](../mcp/) — full setup for each client.
-- [Migrating from manubot](../migrating-from-manubot/) — translation table if you're already comfortable with manubot's resolver.
+- [CLI reference: `resolve`](cli.qmd#quartobot-resolve) — the full flag surface.
+- [MCP server](mcp.qmd) — full setup for each client.
+- [Migrating from manubot](migrating-from-manubot.qmd) — translation table if you're already comfortable with manubot's resolver.
