@@ -125,7 +125,7 @@ brew install asciinema agg
 bash scripts/demo-setup.sh
 asciinema rec docs/demo.cast --command 'bash scripts/demo.sh' --overwrite
 agg docs/demo.cast docs/demo.gif --font-size 18 --theme dracula --speed 1.2 --cols 80 --rows 28
-cp docs/demo.gif site/public/demo.gif  # also serves the landing-page embed
+cp docs/demo.gif docs-src/demo.gif  # also serves the landing-page embed
 ```
 
 The `scripts/demo.tape` file is a [vhs](https://github.com/charmbracelet/vhs) alternative for a higher-fidelity render once a Chrome/Chromium environment is available.

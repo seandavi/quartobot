@@ -13,7 +13,7 @@ uv tool install git+https://github.com/seandavi/quartobot
 ```
 
 `quartobot` depends on `manubot` as a Python library. See
-[Install](../install/) for `uvx`, editable, and post-v0.1-tag
+[Install](install.qmd) for `uvx`, editable, and post-v0.1-tag
 `pip install` paths.
 
 ## Pre-render commands
@@ -244,7 +244,7 @@ a snippet for the `_quarto.yml` banner include.
 The scaffolded `render.yml` is a thin caller of one of the upstream
 reusable workflows. For the full input list, the composite-action
 references, and the standalone-composition pattern, see
-[Workflows and actions](../workflows-and-actions/).
+[Workflows and actions](workflows-and-actions.qmd).
 
 Re-running is safe: files already on disk are left alone and report
 as `skipped-exists`. When `_quarto.yml` already declares the banner

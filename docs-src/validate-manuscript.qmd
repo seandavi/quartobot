@@ -166,5 +166,5 @@ jobs:
 
 ## See also
 
-- [CLI reference: `validate`](../cli/#quartobot-validate) — the flag surface and exit codes.
-- [`quartobot use github-ci`](../cli/#quartobot-use-github-ci) — wire validate into the render workflow.
+- [CLI reference: `validate`](cli.qmd#quartobot-validate) — the flag surface and exit codes.
+- [`quartobot use github-ci`](cli.qmd#quartobot-use-github-ci) — wire validate into the render workflow.

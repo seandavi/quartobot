@@ -82,7 +82,7 @@ scaffold.
   (`references.resolved.bib`) plus a CSL JSON cache
   (`references.json`). Runs as a Quarto `pre-render:` hook on every
   render, or via `--output -` for one-shot stdout lookups. See
-  [resolve a single citation](../resolve-single-citation/).
+  [resolve a single citation](resolve-single-citation.qmd).
 - **`quartobot init`** — scaffolds the citation pipeline into an
   existing Quarto project. Three files only: the `_quarto.yml`
   snippet (manual-merge if the file exists), `references.bib` seed,
@@ -95,11 +95,11 @@ scaffold.
 - **`quartobot mcp`** — opt-in extra. Starts an MCP stdio server
   exposing `resolve_citation`, `scan_project`, `validate_project` as
   read-only tools for Claude Desktop, Codex, Gemini Code Assist.
-  Install with `quartobot[mcp]`. See [the MCP server page](../mcp/).
+  Install with `quartobot[mcp]`. See [the MCP server page](mcp.qmd).
 - **`quartobot scan`** / **`quartobot validate`** — pre-flight
   utilities. `scan` lists every cite key the project mentions;
   `validate` runs static checks against `_quarto.yml`. See
-  [validate a manuscript](../validate-manuscript/).
+  [validate a manuscript](validate-manuscript.qmd).
 
 ## Prerequisites
 
@@ -112,6 +112,6 @@ scaffold.
 
 ## See also
 
-- [First manuscript (15 min)](../first-manuscript/) — the same flow as a guided end-to-end walk-through if you'd rather follow one path than pick between three.
-- [Install reference](../install/) — every install method, when to use which.
-- [CLI reference](../cli/) — including the `quartobot resolve` pre-render hook.
+- [First manuscript (15 min)](first-manuscript.qmd) — the same flow as a guided end-to-end walk-through if you'd rather follow one path than pick between three.
+- [Install reference](install.qmd) — every install method, when to use which.
+- [CLI reference](cli.qmd) — including the `quartobot resolve` pre-render hook.

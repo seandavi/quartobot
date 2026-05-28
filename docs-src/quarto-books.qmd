@@ -185,9 +185,9 @@ reference list from the shared `references.json`.
 
 ## See also
 
-- [First manuscript tutorial](../first-manuscript/) — same flow,
+- [First manuscript tutorial](first-manuscript.qmd) — same flow,
   single-document shape.
-- [CLI reference: `resolve`](../cli/#quartobot-resolve) — the full
+- [CLI reference: `resolve`](cli.qmd#quartobot-resolve) — the full
   flag surface for the pre-render hook.
 - [Worked book example](https://github.com/seandavi/quartobot/tree/main/examples/book-minimal) —
   minimal book exercising the pre-render hook in the main repo.

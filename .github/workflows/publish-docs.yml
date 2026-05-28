@@ -1,0 +1,61 @@
+name: Publish docs
+
+# Renders the Quarto website under docs-src/ and publishes it to
+# GitHub Pages. This is the "simple path" documented in
+# docs-src/deploying.qmd — `quarto publish gh-pages` in a thin
+# workflow. quartobot dogfoods its own recommendation here.
+#
+# Setup required, one time, before the first deploy can succeed:
+#   In repo Settings → Pages → "Source": "Deploy from a branch",
+#   Branch: gh-pages, Folder: / (root)
+#
+# The site publishes to https://seandavi.github.io/quartobot/.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs-src/**"
+      - ".github/workflows/publish-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python (for quartobot)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install quartobot
+        # Use the in-tree checkout so the docs site renders against
+        # the same quartobot version it documents (no PyPI lag).
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: release
+
+      - name: Render and publish to gh-pages
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+          path: docs-src
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

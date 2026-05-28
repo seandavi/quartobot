@@ -18,13 +18,13 @@ Manubot's manuscript-as-software pattern, implemented natively for the Quarto ec
 - `actions/` — composite GitHub Actions (`setup-quartobot`, `render-manuscript`) used by the reusable workflow.
 - `paper/` — eventual home for `paper.md`, the JOSS submission (~1000 words). Voice guide for this file lives in the "Writing in Sean Davis's voice" section below.
 - `docs/` — design docs (`citation-pipeline.md`, `prior-art.md`, `publication-plan.md`, `conversation-notes.md`). Read before non-trivial design changes.
-- `site/` — the documentation site, built with [Astro](https://astro.build) + [Starlight](https://starlight.astro.build). Content lives at `site/src/content/docs/*.md(x)`; navbar in `site/astro.config.mjs`. Deploys to https://seandavi.github.io/quartobot/ via `.github/workflows/publish-site.yml` on every push to `main` that touches `site/**`. First deploy needs Settings → Pages → Source: GitHub Actions flipped on once.
+- `docs-src/` — the documentation site as a Quarto website. All pages live as `*.qmd` here; navbar/sidebar/theming configured in `docs-src/_quarto.yml`. Deploys to https://seandavi.github.io/quartobot/ via `.github/workflows/publish-docs.yml` on every push to `main` that touches `docs-src/**`. First deploy needs Settings → Pages → Source: gh-pages branch / root, set once. (v0.6.0 lesson — replaced Astro/Starlight with a Quarto website to dogfood quartobot on its own docs.)
 
 ## Commands
 
 - **CLI install:** `uv tool install git+https://github.com/seandavi/quartobot` (recommended — puts `quartobot` on user PATH, so Quarto's pre-render subprocess finds it without venv-activation). For repo dev: `uv pip install -e .` from a clone.
 - **Template adoption:** `gh repo create my-paper --template seandavi/quartobot-manuscript` (template currently lives at `template/` in this repo; promotion to its own repo is part of v0.1).
-- **Render the docs site locally:** `cd site && npm install && npm run dev` → http://localhost:4321/quartobot/.
+- **Render the docs site locally:** `cd docs-src && quarto preview` (live-reload). For a one-shot build: `quarto render` outputs to `docs-src/_site/`.
 - **Render the minimal example:** `cd examples/minimal && quarto render`. The pre-render hook calls `quartobot resolve` from `_quarto.yml`; `quartobot` must be on PATH (`uv tool install`).
 - The Venice hackathon manuscript ([seandavi/2026-venice-spatial-hackathon-manuscript](https://github.com/seandavi/2026-venice-spatial-hackathon-manuscript)) runs the CI/permalink/banner half on a live 25-author preprint and is the reference implementation for the template's render workflow.
 
@@ -39,7 +39,7 @@ From `CONTRIBUTING.md`:
 
 ## Releasing
 
-Before tagging `vX.Y.Z`, walk [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). It's grounded in actual failure modes from prior releases — ruff format vs lint, doc URL sweeps after ownership changes, PyPI trusted-publisher mismatches, the `pypi` environment review gate, `astro.config.mjs` `site:` field drift. Each item names the release that taught us the rule. Update the checklist when a new failure mode appears.
+Before tagging `vX.Y.Z`, walk [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md). It's grounded in actual failure modes from prior releases — ruff format vs lint, doc URL sweeps after ownership changes, PyPI trusted-publisher mismatches, the `pypi` environment review gate, docs render cleanly through Quarto. Each item names the release that taught us the rule. Update the checklist when a new failure mode appears.
 
 ## What this is
 

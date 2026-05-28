@@ -17,7 +17,7 @@ call wrapped in `quartobot resolve --output - | jq`. Pick by where
 your agent lives.
 
 If you're using Claude Desktop, the MCP path is simpler — see the
-[MCP + Claude Desktop tutorial](../mcp-claude-desktop/). If you're
+[MCP + Claude Desktop tutorial](mcp-claude-desktop.qmd). If you're
 using a harness with shell access and no MCP support, this is the path.
 
 ## Before you start
@@ -113,9 +113,9 @@ quartobot validate .
 ```
 
 Static checks only — no network. The full check list lives in
-[CLI reference: `quartobot validate`](../cli/#quartobot-validate).
+[CLI reference: `quartobot validate`](cli.qmd#quartobot-validate).
 
-Cross-reference: see [How to resolve a single citation](../resolve-single-citation/)
+Cross-reference: see [How to resolve a single citation](resolve-single-citation.qmd)
 for the CLI side in isolation. The rest of this tutorial assumes that's
 already familiar.
 
@@ -264,7 +264,7 @@ docs for that prompt slot are the agent platform's, not this tutorial's.
 
 ## See also
 
-- [MCP + Claude Desktop](../mcp-claude-desktop/) — the same end, via
+- [MCP + Claude Desktop](mcp-claude-desktop.qmd) — the same end, via
   MCP instead of shell.
-- [How to resolve a single citation](../resolve-single-citation/) —
+- [How to resolve a single citation](resolve-single-citation.qmd) —
   the CLI building block in isolation.

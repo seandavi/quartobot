@@ -66,7 +66,7 @@ snippet (the `pre-render:` line plus the `bibliography:` list) into
 the existing `_quarto.yml` under the existing `project:` block. The
 hook then reads `.ipynb` markdown cells the same way it reads `.qmd`
 body text — same scanner, same cite-key extraction, same resolver
-underneath. The [first-manuscript tutorial](../first-manuscript/)
+underneath. The [first-manuscript tutorial](first-manuscript.qmd)
 covers the full sequence end-to-end; it works identically with
 notebook source.
 
@@ -137,7 +137,7 @@ when a project mixes `.qmd` and `.ipynb` inputs.
 
 ## See also
 
-- [First manuscript (15 min)](../first-manuscript/) — end-to-end
+- [First manuscript (15 min)](first-manuscript.qmd) — end-to-end
   onramp; works identically with `.ipynb` source.
-- [CLI reference: `scan`](../cli/#quartobot-scan) — every flag,
+- [CLI reference: `scan`](cli.qmd#quartobot-scan) — every flag,
   every exit code.
