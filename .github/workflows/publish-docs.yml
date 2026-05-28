@@ -52,10 +52,18 @@ jobs:
         with:
           version: release
 
-      - name: Render and publish to gh-pages
-        uses: quarto-dev/quarto-actions/publish@v2
+      - name: Render Quarto site
+        working-directory: docs-src
+        run: quarto render
+
+      - name: Publish to gh-pages
+        # peaceiris (not quarto-actions/publish) — it creates the
+        # gh-pages branch on first deploy. quarto-actions/publish
+        # refuses to publish if the branch doesn't already exist,
+        # which would chicken-and-egg the bootstrap.
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          target: gh-pages
-          path: docs-src
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs-src/_site
+          force_orphan: true
