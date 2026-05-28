@@ -1,0 +1,137 @@
+---
+title: "Deploying a quartobot manuscript"
+description: Two paths to GitHub Pages — the simple route via `quarto publish gh-pages`, and the full-stack route via quartobot's reusable workflow with PR previews and a versions index.
+---
+
+There are two reasonable ways to get a quartobot-rendered manuscript
+on the web. They differ in what you pay (workflow complexity) for
+what you get (PR previews, a versions index, multi-format download
+links). Both produce the same article content; the difference is in
+the publishing surface around it.
+
+This page lays out both so you can pick deliberately rather than
+landing on whichever happens to be the example you copy first.
+
+# Path 1: `quarto publish gh-pages`
+
+The simple route. Quarto ships with a built-in `publish` subcommand
+that targets several destinations (`gh-pages`, `quarto-pub`,
+`netlify`, `connect`, etc.). For `gh-pages`, it renders the project,
+creates or updates a local `gh-pages` branch, pushes the rendered
+output there, and adds `.nojekyll`.
+
+A 20-line workflow gets you a deploy on every push to `main`:
+
+```yaml
+# .github/workflows/publish.yml
+name: Publish
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: quarto-dev/quarto-actions/setup@v2
+      - uses: astral-sh/setup-uv@v3
+      - run: uv tool install quartobot
+      - uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+After the first run, enable GitHub Pages with Source set to "Deploy
+from a branch" and Branch `gh-pages` / `/ (root)`. From then on,
+every push to `main` redeploys.
+
+**What you get:** whatever Quarto produced lands on the site. For a
+`type: manuscript` project, that includes the HTML article, JATS
+sidecar, MECA bundle, and any download formats configured in
+`_quarto.yml`.
+
+**What you don't get:** PR preview deployments, a versions index, or
+sticky-comment download links on pull requests.
+
+# Path 2: quartobot's reusable workflow
+
+The full-stack route. quartobot publishes a reusable workflow that
+the manuscript repo invokes with a few inputs:
+
+```yaml
+# .github/workflows/render.yml
+name: Render
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  render:
+    uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      project-type: manuscript
+```
+
+This is what `examples/manuscript-typed/` and the
+[`2026-quartobot-manuscript`](https://github.com/seandavi/2026-quartobot-manuscript)
+reference repo use.
+
+**What you get on top of Path 1:**
+
+- **PR preview deployments** at `https://<user>.github.io/<repo>/pr/<N>/`,
+  recreated on every push to the PR branch. A sticky comment on the
+  PR links to it.
+- **A versions index** at `/versions/` listing every release that's
+  been published, with commit subjects, tag names, and dates pulled
+  from the git history at deploy time.
+- **Multi-format download links.** Non-HTML formats are aliased to a
+  stable name (`manuscript.pdf`, `manuscript.docx`) for clean
+  download URLs, alongside Quarto's own `index.{pdf,docx}` names.
+
+**What it costs:** a `gh-pages` branch that the workflow reads,
+modifies, and pushes back on every deploy. Concurrent deploys are
+serialized via a workflow-level concurrency group. The reusable
+workflow itself is maintained in this repo — see
+`.github/workflows/render-reusable-lean.yml`.
+
+# Which one?
+
+| If you... | Use |
+|---|---|
+| Author solo, no PRs against the manuscript | Path 1 |
+| Want one workflow file and minimal concepts | Path 1 |
+| Collaborate via PRs and want preview deployments | Path 2 |
+| Want a browsable history of every release | Path 2 |
+| Are migrating from a v0.5 quartobot project | Path 2 (your existing `render.yml` already uses it) |
+
+Both paths work with `type: manuscript` projects — the reusable
+workflow in v0.6.0 stages `_manuscript/` wholesale, matching what
+`quarto publish gh-pages` does.
+
+# Enabling GitHub Pages on the repo
+
+Either path produces a `gh-pages` branch. Pages itself still has to
+be turned on once:
+
+```bash
+gh api -X POST repos/<owner>/<repo>/pages \
+  -f 'source[branch]=gh-pages' \
+  -f 'source[path]=/'
+```
+
+Or in the UI: **Settings → Pages → Source = "Deploy from a branch" →
+Branch = `gh-pages` / `/ (root)`**.
+
+The first deploy can take a minute or two for the Pages CDN to pick
+up the new content.

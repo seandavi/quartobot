@@ -52,6 +52,19 @@ on:
         type: string
         required: false
         default: "manuscript"
+      manuscript-output-dir:
+        description: |
+          Output directory Quarto manuscripts write to. Defaults to
+          `_manuscript` (Quarto's convention for `type: manuscript`
+          projects). When this directory exists, its contents are
+          staged wholesale — including the MECA bundle, JATS
+          sidecar, and any supporting assets Quarto produced. When
+          it does not exist, the workflow falls back to per-format
+          file lookup at the project root, which is the layout for
+          default-typed projects that render a single article.
+        type: string
+        required: false
+        default: "_manuscript"
       book-output-dir:
         description: "Output directory Quarto books write to."
         type: string
@@ -137,6 +150,7 @@ jobs:
           PROJECT_TYPE: ${{ inputs.project-type }}
           OUTPUT: "index"
           MANUSCRIPT: ${{ inputs.manuscript-name }}
+          MANUSCRIPT_OUTPUT_DIR: ${{ inputs.manuscript-output-dir }}
           BOOK_OUTPUT_DIR: ${{ inputs.book-output-dir }}
           FORMATS: ${{ inputs.formats }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -157,11 +171,33 @@ jobs:
           stage_manuscript() {
             local dest="$1"
             mkdir -p "$dest"
+
+            # `type: manuscript` projects: copy the whole output
+            # directory so the MECA bundle, JATS sidecar, and other
+            # Quarto-managed files come along. Falls through to the
+            # per-format root lookup when the directory is absent
+            # (default-typed projects rendering a single article).
+            if [ -d "$MANUSCRIPT_OUTPUT_DIR" ]; then
+              cp -R "${MANUSCRIPT_OUTPUT_DIR}/." "$dest/"
+            fi
+
             IFS=',' read -ra REQUESTED <<< "$FORMATS"
             for raw in "${REQUESTED[@]}"; do
               fmt=$(echo "$raw" | xargs)
               [ -z "$fmt" ] && continue
               ext="${EXT[$fmt]:-$fmt}"
+
+              # When the manuscript dir was copied, the format files
+              # are already in $dest under their original names; just
+              # add the stable manuscript-name alias for downloads.
+              if [ -f "${dest}/${OUTPUT}.${ext}" ]; then
+                if [ "$fmt" != "html" ] && [ "$fmt" != "revealjs" ]; then
+                  cp "${dest}/${OUTPUT}.${ext}" "${dest}/${MANUSCRIPT}.${ext}"
+                fi
+                continue
+              fi
+
+              # Fallback: per-format file at the project root.
               src="${OUTPUT}.${ext}"
               if [ ! -f "$src" ]; then
                 echo "::warning::format '$fmt' requested but '$src' not found; skipping"

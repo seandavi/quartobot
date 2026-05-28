@@ -13,6 +13,11 @@ inputs:
     description: |
       Comma-separated list of formats to render. Common values:
       "html", "html,pdf", "html,pdf,docx", "html,pdf,docx,jats".
+      Ignored for `type: manuscript` projects — those render every
+      format declared in `_quarto.yml`'s `format:` block in a single
+      atomic `quarto render` invocation (the Quarto-native pattern
+      for manuscripts; per-format `--to X` calls clobber
+      `_manuscript/` between invocations).
     required: false
     default: "html,pdf,docx"
   upload-logs:
@@ -54,41 +59,80 @@ runs:
       run: |
         set -euo pipefail
 
-        IFS=',' read -ra REQUESTED <<< "${{ inputs.formats }}"
-        for raw in "${REQUESTED[@]}"; do
-          fmt=$(echo "$raw" | xargs)  # trim whitespace
-          [ -z "$fmt" ] && continue
-          echo "=== Rendering $fmt at $(date -Iseconds) ==="
+        # `type: manuscript` projects publish all formats into
+        # `_manuscript/` as a single atomic build: each
+        # `quarto render --to X` wipes the directory and replaces it
+        # with that format's output, clobbering anything rendered
+        # earlier in the loop. The Quarto-native pattern is a single
+        # `quarto render` invocation, which produces every configured
+        # format at once. Detect the project type and branch.
+        is_manuscript=0
+        if [ -f _quarto.yml ] && grep -qE '^[[:space:]]*type:[[:space:]]*manuscript[[:space:]]*$' _quarto.yml; then
+          is_manuscript=1
+        fi
 
-          if [ "$fmt" = "pdf" ]; then
-            # PDF can be slow under TinyTeX — emit heartbeats so the
-            # workflow log shows progress.
-            (
-              while true; do
-                echo "[heartbeat] $fmt render still running at $(date -Iseconds)"
-                sleep 30
-              done
-            ) &
-            heartbeat_pid=$!
+        if [ "$is_manuscript" = "1" ]; then
+          echo "=== Rendering manuscript (all formats) at $(date -Iseconds) ==="
+          # Heartbeat covers the whole render — any of HTML/PDF/DOCX
+          # under a manuscript project can be the slow one.
+          (
+            while true; do
+              echo "[heartbeat] manuscript render still running at $(date -Iseconds)"
+              sleep 30
+            done
+          ) &
+          heartbeat_pid=$!
 
-            set +e
-            /usr/bin/time -v quarto render --to "$fmt" --execute-debug 2>&1 | tee "render-${fmt}.log"
-            status=${PIPESTATUS[0]}
-            set -e
+          set +e
+          /usr/bin/time -v quarto render --execute-debug 2>&1 | tee render-manuscript.log
+          status=${PIPESTATUS[0]}
+          set -e
 
-            kill "${heartbeat_pid}" 2>/dev/null || true
-            wait "${heartbeat_pid}" 2>/dev/null || true
+          kill "${heartbeat_pid}" 2>/dev/null || true
+          wait "${heartbeat_pid}" 2>/dev/null || true
 
-            if [ "$status" -ne 0 ]; then
-              echo "::error::Render of $fmt failed (exit $status)"
-              exit "$status"
-            fi
-          else
-            /usr/bin/time -v quarto render --to "$fmt" --execute-debug 2>&1 | tee "render-${fmt}.log"
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Manuscript render failed (exit $status)"
+            exit "$status"
           fi
+          echo "=== Finished manuscript render at $(date -Iseconds) ==="
+        else
+          IFS=',' read -ra REQUESTED <<< "${{ inputs.formats }}"
+          for raw in "${REQUESTED[@]}"; do
+            fmt=$(echo "$raw" | xargs)  # trim whitespace
+            [ -z "$fmt" ] && continue
+            echo "=== Rendering $fmt at $(date -Iseconds) ==="
 
-          echo "=== Finished $fmt render at $(date -Iseconds) ==="
-        done
+            if [ "$fmt" = "pdf" ]; then
+              # PDF can be slow under TinyTeX — emit heartbeats so the
+              # workflow log shows progress.
+              (
+                while true; do
+                  echo "[heartbeat] $fmt render still running at $(date -Iseconds)"
+                  sleep 30
+                done
+              ) &
+              heartbeat_pid=$!
+
+              set +e
+              /usr/bin/time -v quarto render --to "$fmt" --execute-debug 2>&1 | tee "render-${fmt}.log"
+              status=${PIPESTATUS[0]}
+              set -e
+
+              kill "${heartbeat_pid}" 2>/dev/null || true
+              wait "${heartbeat_pid}" 2>/dev/null || true
+
+              if [ "$status" -ne 0 ]; then
+                echo "::error::Render of $fmt failed (exit $status)"
+                exit "$status"
+              fi
+            else
+              /usr/bin/time -v quarto render --to "$fmt" --execute-debug 2>&1 | tee "render-${fmt}.log"
+            fi
+
+            echo "=== Finished $fmt render at $(date -Iseconds) ==="
+          done
+        fi
 
     - name: Upload render logs
       if: always() && inputs.upload-logs == 'true'

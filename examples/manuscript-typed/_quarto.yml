@@ -1,0 +1,16 @@
+project:
+  type: manuscript
+  pre-render: quartobot resolve --from-scan . --id-mode citation-key
+
+manuscript:
+  article: index.qmd
+
+bibliography:
+  - references.bib
+  - references.resolved.bib
+
+format:
+  html:
+    toc: true
+  docx: default
+  jats: default

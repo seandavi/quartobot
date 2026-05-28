@@ -1,5 +1,59 @@
 # Changelog
 
+## v0.6.0 — 2026-05-28
+
+The release that makes `render-reusable-lean.yml` actually work for
+Quarto `type: manuscript` projects. v0.5.0 fixed the citation
+pipeline against the manuscript project type, but the reusable
+workflow's staging step still assumed manuscript outputs landed at
+the project root the way they do for default-typed Quarto projects.
+`type: manuscript` writes to `_manuscript/` — the staging step now
+detects that directory and copies it wholesale, mirroring the
+`stage_book`/`_book/` pattern, which also brings the MECA bundle and
+JATS sidecar along for free.
+
+### Fixed
+
+- `render-reusable-lean.yml` staged nothing into `gh-pages` for
+  `type: manuscript` projects because `stage_manuscript` looked for
+  `index.html` etc. at the project root, while Quarto writes
+  manuscript outputs to `_manuscript/`. The site ended up with only
+  `.nojekyll` and 404'd everywhere. `stage_manuscript` now copies the
+  manuscript output directory (default `_manuscript`, overridable via
+  the new `manuscript-output-dir` input) wholesale when it exists,
+  falling back to per-format root lookup for default-typed projects.
+- `actions/render-manuscript` looped over formats and invoked
+  `quarto render --to <fmt>` once per format. For `type: manuscript`
+  projects each invocation wipes `_manuscript/` before writing its
+  output, so all but the last format silently disappeared. The action
+  now detects manuscript-typed projects (`type: manuscript` in
+  `_quarto.yml`) and uses a single `quarto render` invocation, which
+  is the Quarto-native pattern and produces every configured format
+  at once. Default-typed projects keep the per-format loop (preserves
+  PDF heartbeats and per-format `render-<fmt>.log` artifacts).
+
+### Added
+
+- `manuscript-output-dir` input on `render-reusable-lean.yml`
+  (default `_manuscript`), parallel to the existing
+  `book-output-dir`.
+- `examples/manuscript-typed/` — a minimal example that uses `type:
+  manuscript` in `_quarto.yml`. The test matrix in
+  `test-composite-actions.yml` renders it on every PR so this
+  regression can't recur silently.
+- `docs-src/deploying.qmd` — a docs page contrasting the simple
+  `quarto publish gh-pages` route with the full-stack quartobot
+  reusable workflow (PR previews + versions index + multi-format
+  staging), so consumers pick the right path deliberately.
+
+### Why
+
+`2026-quartobot-manuscript` rendered successfully with quartobot
+v0.5.0 but the GitHub Pages site was an empty `.nojekyll` because
+nothing got staged. We had no `type: manuscript` example in the
+quartobot repo, so `test-composite-actions.yml` never caught the
+mismatch.
+
 ## v0.5.0 — 2026-05-27
 
 (Skipped v0.4.0 — that version number was previously published to
