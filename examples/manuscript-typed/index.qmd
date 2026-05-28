@@ -1,0 +1,32 @@
+---
+title: "quartobot — type: manuscript example"
+author: Your Name
+date: today
+---
+
+# What this renders
+
+A minimal Quarto project with `type: manuscript` set in `_quarto.yml`,
+which writes outputs to `_manuscript/` (HTML, DOCX, JATS sidecar, and
+the MECA bundle for journal submission).
+
+One `@doi:` citation resolved automatically, and one hand-curated
+entry from `references.bib`.
+
+# Citations
+
+The manubot pattern is described in @doi:10.1371/journal.pcbi.1007128.
+The Quarto publishing stack is documented in [@quarto2024].
+
+# What to look for
+
+After `quarto render`:
+
+- `_manuscript/index.html` (and `_manuscript/index.docx`, etc.) exist.
+- The MECA bundle lives at `_manuscript/_manuscript.zip`.
+- `references.resolved.bib` exists at the project root.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::

@@ -18,6 +18,7 @@ on:
       - "actions/**"
       - "src/**"
       - "examples/minimal/**"
+      - "examples/manuscript-typed/**"
       - "examples/book-minimal/**"
       - ".github/workflows/test-composite-actions.yml"
   pull_request:
@@ -25,6 +26,7 @@ on:
       - "actions/**"
       - "src/**"
       - "examples/minimal/**"
+      - "examples/manuscript-typed/**"
       - "examples/book-minimal/**"
       - ".github/workflows/test-composite-actions.yml"
   workflow_dispatch:
@@ -41,7 +43,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Manuscript: HTML + PDF + DOCX, output files at project root.
+          # Default-typed Quarto project (no `type:` set) rendering a
+          # single article. Outputs land at the project root.
           - label: manuscript (examples/minimal)
             project: examples/minimal
             formats: html,pdf,docx
@@ -51,6 +54,19 @@ jobs:
               index.pdf
               index.docx
               references.json
+          # `type: manuscript` project. Outputs land under
+          # `_manuscript/` (Quarto's manuscript convention), including
+          # JATS sidecar and MECA bundle. Regression test for the
+          # v0.6.0 stage_manuscript fix.
+          - label: manuscript-typed (examples/manuscript-typed)
+            project: examples/manuscript-typed
+            formats: html,docx
+            tinytex: "false"
+            assert-files: |
+              _manuscript/index.html
+              _manuscript/index.docx
+              references.json
+              references.resolved.bib
           # Book: HTML only (no PDF book in v0.1), output under _book/.
           # TinyTeX skipped for a faster CI job since we don't render PDF.
           - label: book (examples/book-minimal)
