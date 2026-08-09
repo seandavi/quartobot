@@ -19,6 +19,9 @@ BibTeX file to hand-maintain.
 ::: hero-actions
 [First manuscript in 15 min](first-manuscript.qmd){.btn .btn-primary .btn-lg}
 [View on GitHub](https://github.com/seandavi/quartobot){.btn .btn-outline-secondary .btn-lg}
+
+<a class="github-button" href="https://github.com/seandavi/quartobot" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star seandavi/quartobot on GitHub">Star</a>
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 :::
 :::
 
