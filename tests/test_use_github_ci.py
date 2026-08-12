@@ -34,6 +34,7 @@ def test_lean_apply_writes_ci_machinery(tmp_path):
     assert "project-type: manuscript" in render
     # Lean mode targets the lean reusable workflow.
     assert "render-reusable-lean.yml" in render
+    assert "uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main" in render
     assert "render-reusable.yml@" not in render
 
     pr_closed = (tmp_path / ".github/workflows/pr-closed.yml").read_text()
@@ -80,6 +81,7 @@ def test_versioned_apply_writes_banner_files(tmp_path):
 
     render = (tmp_path / ".github/workflows/render.yml").read_text()
     # Versioned mode targets the v0.1 reusable workflow.
+    assert "uses: seandavi/quartobot/.github/workflows/render-reusable.yml@main" in render
     assert "render-reusable.yml@" in render
     assert "render-reusable-lean.yml" not in render
 
