@@ -16,6 +16,7 @@ project:
 
 website:
   title: "quartobot"
+  google-analytics: G-EZBZXR5ZMP
   description: "Citation resolution and manuscript-as-software CI for Quarto."
   site-url: "https://seandavi.github.io/quartobot/"
   repo-url: "https://github.com/seandavi/quartobot"
