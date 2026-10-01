@@ -18,6 +18,7 @@ website:
   title: "quartobot"
   description: "Citation resolution and manuscript-as-software CI for Quarto."
   site-url: "https://seandavi.github.io/quartobot/"
+  google-analytics: "G-KLLV1GCF4E"
   repo-url: "https://github.com/seandavi/quartobot"
   repo-branch: main
   repo-subdir: docs-src
