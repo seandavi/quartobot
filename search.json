@@ -1,0 +1,1663 @@
+[
+  {
+    "objectID": "workflows-and-actions.html",
+    "href": "workflows-and-actions.html",
+    "title": "Workflows and actions",
+    "section": "",
+    "text": "quartobot ships two reusable GitHub Actions workflows and three composite actions. Most users don’t need to wire them by hand — quartobot use github-ci scaffolds a thin consumer workflow that calls one of the reusable workflows. This page is the reference for when you need to override an input, compose your own pipeline, or understand exactly what the CI is doing.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#picking-a-reusable-workflow",
+    "href": "workflows-and-actions.html#picking-a-reusable-workflow",
+    "title": "Workflows and actions",
+    "section": "Picking a reusable workflow",
+    "text": "Picking a reusable workflow\n\n\n\n\n\n\n\n\n\nrender-reusable-lean.yml (default in v0.3+)\nrender-reusable.yml (manubot pattern)\n\n\n\n\nLatest at /\n✓\n✓\n\n\nPR preview at /pr/&lt;n&gt;/\n✓\n✓\n\n\nSticky PR comment\n✓\n✓\n\n\n/versions/ page\n✓\n✓ (planned in this workflow too)\n\n\nPer-commit /v/&lt;sha&gt;/ permalinks\n—\n✓\n\n\nSnapshot retention\n—\n✓\n\n\nHTML version banner\n—\n✓\n\n\nScaffolded by quartobot use github-ci\n(default)\n--with-versioned-snapshots\n\n\n\nIf you’re starting a new project, use lean. Opt into the versioned-snapshots workflow when you actually need per-commit permalinks — preprint reviewers citing a specific commit’s rendering, the manubot-pattern in full.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#reusable-workflows",
+    "href": "workflows-and-actions.html#reusable-workflows",
+    "title": "Workflows and actions",
+    "section": "Reusable workflows",
+    "text": "Reusable workflows\n\nrender-reusable-lean.yml\nThe lean default. Setup quartobot → install Quarto → run quarto render → stage outputs (latest + PR preview) → update /versions/ page → deploy to gh-pages → sticky PR comment.\nMinimum consumer workflow:\n# .github/workflows/render.yml\nname: Render\non:\n  push: { branches: [main] }\n  pull_request: { branches: [main] }\n  workflow_dispatch:\njobs:\n  render:\n    uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main\n    permissions:\n      contents: write\n      pull-requests: write\nInputs (all optional):\n\n\n\n\n\n\n\n\nInput\nDefault\nDescription\n\n\n\n\nformats\nhtml,pdf,docx\nComma-separated render formats. html, html,pdf, html,pdf,docx, etc.\n\n\nproject-type\nmanuscript\nmanuscript (per-format file copy from project root) or book (copy the whole _book/ site recursively).\n\n\nmanuscript-name\nmanuscript\nBase name for the PDF/DOCX alias under / and /pr/&lt;n&gt;/ — the PR sticky comment links to it. Ignored when project-type: book.\n\n\nbook-output-dir\n_book\nOutput directory Quarto books write to. Only used when project-type: book.\n\n\npython-version\n3.12\nPython version for the quartobot install.\n\n\nquartobot-spec\nquartobot\nPip spec for the quartobot CLI. Defaults to the published PyPI package; pin a tag (quartobot==0.3.0), point at a fork, or use a workspace path for in-tree testing.\n\n\nquarto-version\nrelease\nrelease for latest stable; pre-release is also recognized. Pass a specific version like \"1.5.57\" for reproducible CI.\n\n\ntinytex\n\"true\"\nInstall TinyTeX (required for PDF render). Set \"false\" to skip if HTML-only.\n\n\nproject\n.\nDirectory holding _quarto.yml. Defaults to the repo root.\n\n\nproject-title\n\"\" (repository name)\nTitle for the /versions/ page. Defaults to the repository name; pass an explicit value for a friendlier display.\n\n\n\nOverriding inputs:\njobs:\n  render:\n    uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main\n    permissions:\n      contents: write\n      pull-requests: write\n    with:\n      formats: \"html,pdf\"\n      quarto-version: \"1.5.57\"\n      project-title: \"My Paper\"\n\n\nrender-reusable.yml\nThe v0.1 / manubot-pattern workflow. Everything the lean workflow does, plus a per-commit /v/&lt;sha&gt;/ deploy on every push, snapshot retention pruning before each deploy, and a sed-substituted HTML version banner included into the rendered HTML.\nWhen to use: preprint workflows where readers need to cite a specific commit’s rendering (“we used the version at /v/&lt;commit-sha&gt;/”). Otherwise, prefer the lean workflow — the versioned pattern has substantially more moving parts (banner template, retention policy config, the _version-banner.html include in _quarto.yml).\nMinimum consumer workflow: identical shape to the lean one, just pointing at the other file:\njobs:\n  render:\n    uses: seandavi/quartobot/.github/workflows/render-reusable.yml@main\n    permissions:\n      contents: write\n      pull-requests: write\nAdditional inputs over the lean workflow:\n\n\n\n\n\n\n\n\nInput\nDefault\nDescription\n\n\n\n\nbanner-template\n_version-banner.html.template\nPath to the placeholder-containing banner template (sed substitution input).\n\n\nbanner-output\n_version-banner.html\nPath the substituted banner is written to. The _quarto.yml format.html.include-before-body: should reference this same path.\n\n\n\nAll the lean workflow’s inputs apply here too.\nRetention policy is configured per-project under quartobot.snapshots in _quarto.yml:\nquartobot:\n  snapshots:\n    latest: keep              # / is always the most recent build\n    tagged: keep              # any v/&lt;sha&gt; whose commit has a git tag survives\n    recent: 10                # rolling window: last N untagged builds\n    pruned_behavior: redirect # `redirect` (default) or `delete`\n    size_budget_mb: 800       # 80% of the 1 GB GitHub Pages soft limit\n    on_over_budget: fail      # `fail` (default) or `warn`\nSee Differences from manubot for the full design rationale on the retention model.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#composite-actions",
+    "href": "workflows-and-actions.html#composite-actions",
+    "title": "Workflows and actions",
+    "section": "Composite actions",
+    "text": "Composite actions\nThe three composite actions are the building blocks the reusable workflows are built from. You can also use them directly — useful when neither reusable workflow fits your pipeline (custom deploy target, multi-stage build, integration with non-Quarto steps).\n\nsetup-quartobot\nInstalls Python, the quartobot CLI on PATH (so the Quarto pre-render hook subprocess can invoke it), pandoc, Quarto, and TinyTeX. Used as the first step in both reusable workflows.\nPath: seandavi/quartobot/actions/setup-quartobot@main\n\n\n\n\n\n\n\n\nInput\nDefault\nDescription\n\n\n\n\npython-version\n3.12\nPython to install.\n\n\nquartobot-spec\nquartobot\nPip spec — PyPI package by default; override with a git ref, a fork, or a workspace path for in-tree testing.\n\n\nquarto-version\nrelease\nrelease / pre-release / specific version like \"1.5.57\".\n\n\ntinytex\n\"true\"\nInstall TinyTeX. Skip for HTML-only renders.\n\n\nproject\n.\nDirectory holding _quarto.yml.\n\n\n\nWhy pandoc? Quarto bundles its own pandoc, but manubot.cite shells out to a standalone pandoc via shutil.which(\"pandoc\") to convert biblatex (.bib) entries to CSL JSON. Without a system pandoc, manubot silently returns an empty bibliography and .bib keys are treated as unresolved. This action installs one.\n\n\nrender-manuscript\nRenders a Quarto project to one or more formats with heartbeat output during long PDF renders. Optionally uploads render logs as a workflow artifact.\nPath: seandavi/quartobot/actions/render-manuscript@main\n\n\n\n\n\n\n\n\nInput\nDefault\nDescription\n\n\n\n\nproject\n.\nPath to the Quarto project directory.\n\n\nformats\nhtml,pdf,docx\nComma-separated formats.\n\n\nupload-logs\n\"true\"\nUpload render-&lt;fmt&gt;.log files as the render-logs artifact. Set \"false\" to skip.\n\n\nlog-artifact-name\nrender-logs\nArtifact name when upload-logs: true.\n\n\n\nHeartbeat output: PDF renders under TinyTeX can be slow. The action emits a [heartbeat] line every 30 seconds during the PDF step so the workflow log doesn’t look hung.\n\n\nprune-snapshots\nApplies the project’s snapshot retention policy to the gh-pages branch. Only used by render-reusable.yml (versioned-snapshots); the lean workflow doesn’t deploy per-commit snapshots and so doesn’t need pruning.\nPath: seandavi/quartobot/actions/prune-snapshots@main\n\n\n\n\n\n\n\n\nInput\nDefault\nDescription\n\n\n\n\nmode\napply\napply prunes + pushes the result. echo runs read-only (inventory + decision logged, no mutations). Use echo on PR builds.\n\n\nproject\n.\nDirectory holding _quarto.yml (used to load quartobot.snapshots config).\n\n\ngh-pages-branch\ngh-pages\nName of the gh-pages branch.\n\n\nlatest-sha\n\"\" (auto)\nFull SHA of the build currently being deployed. Defaults to head SHA on PRs, github.sha otherwise.\n\n\n\nOutputs:\n\n\n\n\n\n\n\nOutput\nDescription\n\n\n\n\npruned-count\nNumber of v/&lt;sha&gt;/ directories pruned.\n\n\nover-budget\n\"true\" if projected post-prune size still exceeds size_budget_mb.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#pinning-convention",
+    "href": "workflows-and-actions.html#pinning-convention",
+    "title": "Workflows and actions",
+    "section": "Pinning convention",
+    "text": "Pinning convention\nThe examples above use @main. In production, pin to a tag. Tags are immutable; main moves with every commit. The release flow ships tags like v0.3.0:\nuses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@v0.3.0\nThe reusable workflows internally also reference the actions via @main while the project is pre-1.0; once a tagged release is declared stable, those internal references will be swept to the matching tag in a release commit.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#composing-your-own-pipeline",
+    "href": "workflows-and-actions.html#composing-your-own-pipeline",
+    "title": "Workflows and actions",
+    "section": "Composing your own pipeline",
+    "text": "Composing your own pipeline\nIf neither reusable workflow fits — custom deploy target (Netlify, Quarto Pub, Vercel), multi-stage build, integration with non-Quarto steps — the composite actions compose into a workflow you fully control:\nname: Custom render\non:\n  push: { branches: [main] }\njobs:\n  render:\n    runs-on: ubuntu-latest\n    permissions: { contents: write }\n    steps:\n      - uses: actions/checkout@v4\n      - uses: seandavi/quartobot/actions/setup-quartobot@main\n      - uses: seandavi/quartobot/actions/render-manuscript@main\n        with:\n          formats: \"html,pdf\"\n      # ... your own deploy / publish steps here\nThe pre-render hook for citation resolution fires inside quarto render — setup-quartobot puts quartobot on PATH so it can be invoked by Quarto without further configuration.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "workflows-and-actions.html#see-also",
+    "href": "workflows-and-actions.html#see-also",
+    "title": "Workflows and actions",
+    "section": "See also",
+    "text": "See also\n\nCLI reference — quartobot use github-ci is the scaffolder that writes a consumer workflow against one of the reusable workflows above.\nFirst manuscript in 15 minutes — the guided walkthrough that uses the default lean workflow end-to-end.\nDifferences from manubot — design rationale on the lean-default and the retention policy.\nTroubleshooting — when the canonical path breaks.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "Workflows and actions"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html",
+    "href": "troubleshooting.html",
+    "title": "Troubleshooting",
+    "section": "",
+    "text": "The things first-time users run into, with the canonical fix for each.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#command-not-found-quartobot-during-quarto-render",
+    "href": "troubleshooting.html#command-not-found-quartobot-during-quarto-render",
+    "title": "Troubleshooting",
+    "section": "command not found: quartobot during quarto render",
+    "text": "command not found: quartobot during quarto render\nquartobot --version works in your shell, but quarto render fails with command not found: quartobot. The shell and Quarto’s pre-render subprocess see different PATHs.\nuv tool install puts quartobot at ~/.local/bin/quartobot (or similar). That directory has to be on the PATH the user Quarto runs as, not just the venv-activated PATH in your terminal.\nuv tool update-shell      # ensures ~/.local/bin is in PATH\n# log out + back in, or open a fresh terminal\nwhich quartobot           # confirm it's findable\nquarto check              # confirm Quarto agrees\nquarto render\nFor pipx-installed quartobot, run pipx ensurepath instead.\nThe full canonical answer lives in Install: verify Quarto can find it.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#a-cite-key-wont-resolve",
+    "href": "troubleshooting.html#a-cite-key-wont-resolve",
+    "title": "Troubleshooting",
+    "section": "A cite key won’t resolve",
+    "text": "A cite key won’t resolve\nquartobot resolve logs lines like:\n  ✓ doi:10.21105/joss.01686 → JlsZJsmU\n  ✗ doi:10.99/bogus.999 — HTTPError: 404 Client Error\n2 resolved, 1 failed\nFailed keys do not end up in references.json. The resolver continues processing the remaining keys, exits with status 1, and leaves the partial output in place. CI will mark the render failed.\nTo investigate one key in isolation:\nquartobot resolve --output - doi:10.99/bogus.999\nThat writes the resolution attempt to stderr and the JSON (or nothing, on failure) to stdout, without touching references.json.\nWhen a key genuinely can’t be auto-resolved (a preprint not yet on Crossref, a paper whose DOI metadata is garbage, an old report with no identifier at all), drop a hand-curated entry into references.bib under any ID you like — including the same prefix-colon-id form your prose uses. pandoc-citeproc reads .bib and .json together; matches in either are fine.\n@misc{doi:10.99/bogus.999,\n  author = {Doe, J.},\n  title  = {The paper whose DOI metadata is wrong},\n  year   = {2026},\n  url    = {https://example.org/preprint.pdf}\n}",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#how-caching-works",
+    "href": "troubleshooting.html#how-caching-works",
+    "title": "Troubleshooting",
+    "section": "How caching works",
+    "text": "How caching works\nThere is no hidden cache directory. The cache is references.json itself.\nquartobot resolve --cache &lt;path&gt; reads previously-resolved entries from &lt;path&gt;; cache hits skip the network call entirely. The pre-render hook in _quarto.yml doesn’t pass --cache explicitly because --cache defaults to whatever --output points at. So a second render reads the entries the first render wrote, and only hits the network for keys it hasn’t seen before.\nConsequences:\n\nFirst render writes references.resolved.bib and needs network for every persistent-identifier key. On a paper with 50 DOIs this takes a few seconds.\nSubsequent renders are network-free for keys already in the file. New keys get fetched and added.\nCommitting references.json to the repo means CI never hits the network either, which is the whole point. Crossref / PubMed outages don’t break your CI build.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#forcing-a-refresh",
+    "href": "troubleshooting.html#forcing-a-refresh",
+    "title": "Troubleshooting",
+    "section": "Forcing a refresh",
+    "text": "Forcing a refresh\nA registrar fixed a typo in a paper title; your references.json still has the old one. Or a preprint posted to Crossref between renders.\nTwo ways to invalidate:\n# Refresh a single key:\njq 'map(select(.id != \"doi:10.21105/joss.01686\"))' \\\n   references.json &gt; references.json.new && mv references.json.new references.json\nquarto render\n\n# Refresh everything:\nrm references.json\nquarto render\nBoth work because the pre-render hook re-runs on the next render and re-fetches anything missing from the cache.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#pandoc-warns-citation-not-found",
+    "href": "troubleshooting.html#pandoc-warns-citation-not-found",
+    "title": "Troubleshooting",
+    "section": "Pandoc warns “Citation not found”",
+    "text": "Pandoc warns “Citation not found”\nThe render output shows @doi:10.x/y rendered as literal text instead of a formatted citation, plus a pandoc warning like:\n[WARNING] Citeproc: citation doi:10.21105/joss.01686 not found\nThe cite key is in your prose but not in any bibliography. Two common causes:\n\nThe resolver failed and didn’t write that key to references.json. Run quartobot resolve directly — check for a ✗ line in the output.\nThe key isn’t a persistent-identifier prefix (e.g., @smith2023) and isn’t in references.bib either. Hand-curated keys belong in .bib; quartobot only resolves the seven manubot prefixes (doi:, pmid:, arxiv:, isbn:, url:, wikidata:, pmc:).\n\nquartobot validate flags both classes of problem before you render.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#id-mode-citation-key-is-required",
+    "href": "troubleshooting.html#id-mode-citation-key-is-required",
+    "title": "Troubleshooting",
+    "section": "--id-mode citation-key is required",
+    "text": "--id-mode citation-key is required\nIf your prose has [@doi:10.x/y] but the rendered PDF shows it as literal [@doi:10.x/y] even though references.json has an entry for the DOI, check that --id-mode citation-key is on the pre-render line in _quarto.yml:\nproject:\n  pre-render: &gt;-\n    quartobot resolve --from-scan .\n    --id-mode citation-key\n    --id-mode citation-key\nWithout --id-mode citation-key, the CSL id field is manubot’s hash form (e.g., JlsZJsmU), not the citation key as it appears in your prose. pandoc-citeproc then can’t match [@doi:10.x/y] to anything in references.json and the cite renders as literal text.\nquartobot validate flags this too.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#network-behavior",
+    "href": "troubleshooting.html#network-behavior",
+    "title": "Troubleshooting",
+    "section": "Network behavior",
+    "text": "Network behavior\nThe pre-render hook needs network on the first render of a project (or the first time a new key appears in prose). Subsequent renders are network-free as long as references.json is committed and the cited keys haven’t changed.\nFor an offline-first workflow:\n\nRun quarto render once with network. references.json is now populated.\nCommit references.json.\nAll subsequent renders — local, CI, on a plane — are network-free.\n\nThe dry-run mode reports what would be resolved without making any network calls:\nquartobot resolve --from-scan . --dry-run\nUseful for confirming the cite-key scan picked up what you expect before you trust an actual render.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "troubleshooting.html#see-also",
+    "href": "troubleshooting.html#see-also",
+    "title": "Troubleshooting",
+    "section": "See also",
+    "text": "See also\n\nInstall reference — every install method, what to use when.\nValidate a manuscript — the pre-flight check that catches most of these before the render fails.\nResolve a single citation — the one-key shell workflow, useful for debugging.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Troubleshooting"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html",
+    "href": "resolve-single-citation.html",
+    "title": "How to resolve a single citation",
+    "section": "",
+    "text": "You have a single persistent-identifier key and want the metadata for it. Two ways to ask — pick by where your agent or shell tool lives.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html#cli-quartobot-resolve---output--",
+    "href": "resolve-single-citation.html#cli-quartobot-resolve---output--",
+    "title": "How to resolve a single citation",
+    "section": "CLI: quartobot resolve --output -",
+    "text": "CLI: quartobot resolve --output -\nThe stdout mode of resolve writes CSL JSON straight to the pipe. Hand it one or more keys as arguments:\nquartobot resolve --output - doi:10.21105/joss.01686 | jq '.[0].title'\n\"Welcome to the Tidyverse\"\nThe JSON shape is CSL JSON — the same structure pandoc-citeproc reads. --output - skips the cache write, the human-readable summary line goes to stderr, and exit is non-zero if any key fails to resolve.\n\nOne example per prefix\nThe resolver handles every persistent-identifier prefix manubot supports. Each call below resolves a single key against its source registrar:\n# Journal DOI (Crossref) — \"Welcome to the Tidyverse\"\nquartobot resolve --output - doi:10.21105/joss.01686 | jq '.[0].title'\n\n# PubMed ID (PubMed) — GTEx Consortium pilot analysis\nquartobot resolve --output - pmid:23715323 | jq '.[0].title'\n\n# arXiv preprint (arXiv) — \"Attention Is All You Need\"\nquartobot resolve --output - arxiv:1706.03762 | jq '.[0].title'\n\n# bioRxiv preprint via DOI (Crossref-routed to bioRxiv) — Seurat v3\nquartobot resolve --output - doi:10.1101/460147 | jq '.[0].title'\nBare DOIs (no doi: prefix) work too. url:, wikidata:, isbn:, and pmc: are also valid. See CLI reference: resolve for the full flag surface (--from-scan, --id-mode, --cache, --dry-run).",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html#mcp-resolve_citation-tool",
+    "href": "resolve-single-citation.html#mcp-resolve_citation-tool",
+    "title": "How to resolve a single citation",
+    "section": "MCP: resolve_citation tool",
+    "text": "MCP: resolve_citation tool\nThe same lookup, exposed to an agent that speaks MCP. After the server is wired into your authoring client (Claude Desktop, Codex, Gemini Code Assist, Cursor), the agent calls one tool:\nresolve_citation(cite_key=\"doi:10.21105/joss.01686\")\nWhat comes back is the CSL JSON object for that key — same payload as one element of the CLI’s array. The agent can read the title, author list, year, container, DOI, and drop a grounded citation into the draft instead of guessing.\nA leading @ or trailing pandoc-terminator punctuation (/, ., ,) is normalized away, so the tool is forgiving about the exact shape the agent extracts from prose.\nSee MCP server for the full per-client config (Claude Desktop, Codex, Gemini Code Assist, Cursor).",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html#errors",
+    "href": "resolve-single-citation.html#errors",
+    "title": "How to resolve a single citation",
+    "section": "Errors",
+    "text": "Errors\nWhat an unresolvable key looks like on each surface:\nCLI — non-zero exit, stderr message:\n$ quartobot resolve --output - doi:not.a.real.doi/x\n  ✗ doi:not.a.real.doi/x — could not resolve\n0 resolved, 1 failed.\n$ echo $?\n1\nStdout stays empty (or carries [] if other keys in the same call resolved). A pipeline downstream sees the non-zero exit; a shell set -e catches it.\nMCP — the tool returns a dict rather than raising:\n{\n  \"error\": \"could not resolve cite key: doi:not.a.real.doi/x\",\n  \"cite_key\": \"doi:not.a.real.doi/x\"\n}\nThe MCP server stays up. The agent sees a usable response and can explain the failure to the author or try a different key.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html#pick-by-context",
+    "href": "resolve-single-citation.html#pick-by-context",
+    "title": "How to resolve a single citation",
+    "section": "Pick by context",
+    "text": "Pick by context\nMCP when your authoring client speaks it natively (Claude Desktop, Codex, Gemini Code Assist, Cursor). CLI stdout when your agent shells out, or when you’re in a terminal piping through jq. Both reach the same manubot.cite.citekey_to_csl_item underneath — eight years of source-API quirks behind one call.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "resolve-single-citation.html#see-also",
+    "href": "resolve-single-citation.html#see-also",
+    "title": "How to resolve a single citation",
+    "section": "See also",
+    "text": "See also\n\nCLI reference: resolve — the full flag surface.\nMCP server — full setup for each client.\nMigrating from manubot — translation table if you’re already comfortable with manubot’s resolver.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Resolve a single citation"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html",
+    "href": "quarto-books.html",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "",
+    "text": "A Quarto book is a multi-chapter project that renders to _book/ with per-chapter HTML pages, full-text search, and a sidebar. Wiring quartobot into it works the same as for manuscripts; what changes is the output directory (_book/ not _output/), the cross-chapter citation flow, and the per-chapter render of the version banner.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#minimal-wiring",
+    "href": "quarto-books.html#minimal-wiring",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "Minimal wiring",
+    "text": "Minimal wiring\nUse Quarto’s scaffolder for the project shape, then layer the citation pipeline on top:\nquarto create project book my-book\ncd my-book\nquartobot init\nBecause quarto create project already wrote a _quarto.yml, quartobot init won’t touch it. It prints a YAML snippet to merge in by hand — the pre-render: line plus the bibliography: list. Paste it in. The result:\nproject:\n  type: book\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbook:\n  title: \"My book\"\n  chapters:\n    - index.qmd\n    - intro.qmd\n    - methods.qmd\n    - summary.qmd\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nThat’s the minimum. Cite keys in any chapter resolve before pandoc runs.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#cross-chapter-citations",
+    "href": "quarto-books.html#cross-chapter-citations",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "Cross-chapter citations",
+    "text": "Cross-chapter citations\nquartobot resolve --from-scan . walks every chapter and writes one shared references.json. A cite key that appears in chapters 2 and 5 resolves once; both chapters’ rendered HTML reference the same bibliography entry. pandoc-citeproc’s default per-page reference list shows only the entries actually cited on that page (or chapter, here) — so a reader on the methods chapter sees only the methods chapter’s references, even though references.json carries every key the whole book cites.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#output-directory",
+    "href": "quarto-books.html#output-directory",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "Output directory",
+    "text": "Output directory\nQuarto books write to _book/ (configurable via project.output-dir:). The reusable CI workflow that quartobot use github-ci scaffolds copies _book/ into the gh-pages permalink tree (/v/&lt;sha&gt;/ for books, same as manuscripts).\nIf you override project.output-dir: to something other than _book/, also pass the new path to the reusable workflow’s book-output-dir input — the CI side doesn’t auto-detect. Alternatively, detach the workflow and run your own. The render.yml documents the full input list.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#version-banner-per-chapter",
+    "href": "quarto-books.html#version-banner-per-chapter",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "Version banner per chapter",
+    "text": "Version banner per chapter\nquartobot use github-ci writes a _version-banner.html include and prints a YAML snippet to paste into _quarto.yml so it actually renders. The snippet uses format.html.include-before-body, which lands the banner above the chapter’s content (the same key use github-ci’s manual-merge output declares). Every rendered chapter then carries the banner — usually what you want, since every chapter says which commit it came from. If you want the banner only on the title page, scope the include via a _metadata.yml in that chapter’s directory rather than at the project level.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#worked-example",
+    "href": "quarto-books.html#worked-example",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "Worked example",
+    "text": "Worked example\nA three-chapter book skeleton. The directory:\nmy-book/\n├── _quarto.yml\n├── index.qmd\n├── chapters/\n│   ├── methods.qmd\n│   └── results.qmd\n└── references.bib\n_quarto.yml:\nproject:\n  type: book\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbook:\n  title: \"Worked example\"\n  chapters:\n    - index.qmd\n    - chapters/methods.qmd\n    - chapters/results.qmd\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nindex.qmd is plain prose — an introduction with no citations.\nchapters/methods.qmd cites the manubot paper:\n# Methods\n\nWe processed transcripts with the tidyverse\n[@doi:10.21105/joss.01686] for data wrangling and visualization.\nchapters/results.qmd cites the GTEx pilot and re-cites the same DOI:\n# Results\n\nComparing against the GTEx pilot's tissue panel\n[@pmid:23715323], we re-ran the tidyverse pipeline\n[@doi:10.21105/joss.01686] across the same donors.\nScan from the project root:\n$ quartobot scan .\ndoi:\n  10.21105/joss.01686 (2x)\npmid:\n  23715323\n\n2 unique key(s), 3 total occurrence(s) across 3 file(s).\nscan groups by prefix and tags repeated keys with (Nx) so you can see at a glance which references the book leans on most. The DOI shows up twice — once in methods.qmd, once in results.qmd. That’s a same-key-cited-in-multiple-files case; if the duplicate crosses chapter boundaries by accident (you wanted to remove one), quartobot validate will surface it under “Duplicates:” as a CI gate (informational here in scan, gate in validate).\nThen render:\nquarto render\nThe pre-render hook fires once, resolves both keys (the DOI from Crossref, the PMID from PubMed), writes references.resolved.bib, and hands control back to pandoc. Output:\n_book/\n├── index.html\n├── chapters/\n│   ├── methods.html\n│   └── results.html\n└── search.json\n_book/chapters/methods.html carries one reference at the bottom — the manubot paper. _book/chapters/results.html carries two — the GTEx pilot and the manubot paper. Both pages link the same bibliography entry for the DOI; pandoc-citeproc renders the per-page reference list from the shared references.json.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "quarto-books.html#see-also",
+    "href": "quarto-books.html#see-also",
+    "title": "How to use quartobot in a Quarto book",
+    "section": "See also",
+    "text": "See also\n\nFirst manuscript tutorial — same flow, single-document shape.\nCLI reference: resolve — the full flag surface for the pre-render hook.\nWorked book example — minimal book exercising the pre-render hook in the main repo.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto book"
+    ]
+  },
+  {
+    "objectID": "mcp.html",
+    "href": "mcp.html",
+    "title": "MCP server",
+    "section": "",
+    "text": "LLM-driven drafting workflows are the new pressure point for citation handling. The model proposes a passage, the author asks “where’s that from?”, and someone — model or human — fills in a reference. Today the model hallucinates the DOI, links to whatever URL appears in its training data, or breaks the loop and dumps the work in the author’s lap.\nManubot solves exactly this problem (resolve doi:, pmid:, arxiv:, isbn:, url:, wikidata:, pmc: keys to canonical metadata via the source APIs) and has been doing it for eight years — but only inside its own pandoc filter. An agent calling out from Claude Desktop, Codex, or Gemini Code Assist can’t reach it.\nquartobot mcp closes that gap. It starts a stdio MCP server that hands the agent three read-only tools backed by the same code the CLI uses for the pre-render hook. Eight years of accumulated source-API bug fixes show up as one primitive in the agent’s toolkit; nobody has to reimplement them.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "MCP server"
+    ]
+  },
+  {
+    "objectID": "mcp.html#install",
+    "href": "mcp.html#install",
+    "title": "MCP server",
+    "section": "Install",
+    "text": "Install\nThe server ships as an opt-in extra. Base quartobot installs don’t pull the MCP SDK.\nuv tool install 'quartobot[mcp]'\nIf quartobot is already installed without the extra, re-running with [mcp] upgrades in place. Confirm:\nquartobot mcp --help",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "MCP server"
+    ]
+  },
+  {
+    "objectID": "mcp.html#tools",
+    "href": "mcp.html#tools",
+    "title": "MCP server",
+    "section": "Tools",
+    "text": "Tools\nThe server registers three tools. All are read-only — nothing writes to your filesystem.\n\nresolve_citation(cite_key)\nResolve a single persistent-identifier key to CSL JSON. Direct wrap of manubot.cite.citekey_to_csl_item — same resolver quartobot resolve uses, same metadata.\nAccepts a leading @ and trailing pandoc-terminator punctuation (/, ., ,, etc.); both are normalized away. Errors return as a {\"error\": ..., \"cite_key\": ...} dict rather than crashing the server, so an agent can recover and explain the failure.\n\n\nscan_project(path, recursive=true)\nWalk a Quarto project directory and return the cite-key inventory grouped by prefix, plus per-key occurrence locations. Same scan quartobot scan does. Useful when the agent needs to see what’s already cited before proposing a new reference.\n\n\nvalidate_project(path)\nRun the same pre-flight checks quartobot validate runs: _quarto.yml exists and declares bibliography:, project.pre-render calls quartobot resolve --id-mode citation-key, references.json is in the bibliography list, no duplicate cite keys across files. Returns the full check list, a passed boolean, and the failures separately. Useful for an agent confirming its edits don’t break the manuscript’s CI gate.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "MCP server"
+    ]
+  },
+  {
+    "objectID": "mcp.html#client-setup",
+    "href": "mcp.html#client-setup",
+    "title": "MCP server",
+    "section": "Client setup",
+    "text": "Client setup\nAll examples assume quartobot is on the shell PATH (the uv tool install path puts it there). Stdio transport only — no port to configure, no auth to wire up.\n\nClaude Desktop\nEdit ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) or %APPDATA%\\Claude\\claude_desktop_config.json (Windows):\n{\n  \"mcpServers\": {\n    \"quartobot\": {\n      \"command\": \"quartobot\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\nRestart Claude Desktop. The three tools show up under the MCP icon at the bottom of the chat input. Test with: “use quartobot to resolve doi:10.1371/journal.pcbi.1007128.”\n\n\nCodex CLI\nCodex reads MCP servers from ~/.codex/config.toml. Append:\n[mcp_servers.quartobot]\ncommand = \"quartobot\"\nargs = [\"mcp\"]\nRestart any running Codex session. The tools become available to the agent automatically.\n\n\nGemini Code Assist (VS Code)\nOpen the workspace’s .vscode/settings.json (or your user settings) and add:\n{\n  \"geminicodeassist.mcpServers\": {\n    \"quartobot\": {\n      \"command\": \"quartobot\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\nReload the window. Gemini sees the tools on its next call.\n\n\nAny other MCP client\nSame command pattern. The server speaks plain stdio MCP, so any client that lets you point at a binary works:\ncommand: quartobot\nargs: [\"mcp\"]",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "MCP server"
+    ]
+  },
+  {
+    "objectID": "mcp.html#whats-not-here",
+    "href": "mcp.html#whats-not-here",
+    "title": "MCP server",
+    "section": "What’s not here",
+    "text": "What’s not here\n\nNo write tools. No init, no scaffolding, no auto-write to _quarto.yml. The cost of a hallucinated citation is small and scoped to the agent’s reply; the cost of an agent writing a scaffold into the wrong directory is not. If MCP grows a confirmation-UX primitive that the major clients honor, that calculus changes.\nNo HTTP/SSE transport. Every authoring client that matters today is stdio. The MCP spec supports networked transports; quartobot mcp doesn’t, until somebody asks.\nNo quartobot mcp install &lt;client&gt; helper. Each client has its own config schema and filesystem layout; chasing the drift on three or four moving targets is the kind of maintenance load that outweighs the convenience. The snippets above are short enough.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "MCP server"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html",
+    "href": "jupyter-notebooks.html",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "",
+    "text": "Quarto renders .ipynb natively. You can author a manuscript in JupyterLab, run analysis in code cells, and have the same @doi: citation flow as a .qmd manuscript. This page covers the bits specific to the notebook shape — where cite keys belong, how the pre-render hook reads them, and what quartobot scan reports.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html#where-cite-keys-go",
+    "href": "jupyter-notebooks.html#where-cite-keys-go",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "Where cite keys go",
+    "text": "Where cite keys go\nMarkdown cells only. A cite key like @doi:10.1371/journal.pcbi.1007128 inside a markdown cell renders exactly the way it does in a .qmd file. Cite keys appearing in code-cell strings or comments are ignored — by both Quarto’s renderer and quartobot scan. Strings in code aren’t prose, so they aren’t citations.\nA two-cell paper.ipynb looks like this in JSON:\n{\n  \"cells\": [\n    {\n      \"cell_type\": \"markdown\",\n      \"source\": [\n        \"## Introduction\\n\",\n        \"\\n\",\n        \"The manubot pattern [@doi:10.1371/journal.pcbi.1007128]\\n\",\n        \"treats a paper as software.\\n\"\n      ]\n    },\n    {\n      \"cell_type\": \"code\",\n      \"source\": [\n        \"import pandas as pd\\n\",\n        \"# @doi:10.5555/ignored — comment, not a citation\\n\"\n      ]\n    }\n  ]\n}\nThe first cell holds prose with one DOI citation. The second cell is analysis code. scan reads the first cell and ignores the second, including the DOI-looking string in the comment.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html#wire-the-pre-render-hook",
+    "href": "jupyter-notebooks.html#wire-the-pre-render-hook",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "Wire the pre-render hook",
+    "text": "Wire the pre-render hook\nSame shape as a .qmd manuscript. Create the project, swap the entry point to a notebook (or point at an existing .ipynb), then add the citation pipeline:\nquarto create project manuscript my-paper\ncd my-paper\nrm index.qmd\njupyter lab paper.ipynb        # author your notebook\nquartobot init\nBecause quarto create project already wrote _quarto.yml, init won’t touch it — it prints a YAML snippet to paste in. Copy that snippet (the pre-render: line plus the bibliography: list) into the existing _quarto.yml under the existing project: block. The hook then reads .ipynb markdown cells the same way it reads .qmd body text — same scanner, same cite-key extraction, same resolver underneath. The first-manuscript tutorial covers the full sequence end-to-end; it works identically with notebook source.\nThe relevant _quarto.yml lines after init:\nproject:\n  type: manuscript\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nRun quarto render. The hook resolves every cite key in every markdown cell, writes CSL JSON to references.resolved.bib, and pandoc-citeproc formats the citations in the rendered output.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html#what-quartobot-scan-reports",
+    "href": "jupyter-notebooks.html#what-quartobot-scan-reports",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "What quartobot scan reports",
+    "text": "What quartobot scan reports\nOn the two-cell paper.ipynb from above:\n$ quartobot scan paper.ipynb\ndoi:\n  10.1371/journal.pcbi.1007128\n\n1 unique key(s), 1 total occurrence(s) across 1 file(s).\nOn a larger project with duplicates across files, the locations show which cell a cite key came from:\n$ quartobot scan .\ndoi:\n  10.1371/journal.pcbi.1007128 (2x)\npmid:\n  31479462\n\n2 unique key(s), 3 total occurrence(s) across 2 file(s).\n\nDuplicates:\n  @doi:10.1371/journal.pcbi.1007128:\n    paper.ipynb:cell3:5\n    methods.qmd:14\nThe cellN index is 1-based and matches the order cells appear in the notebook JSON — the same order JupyterLab shows in the cell sidebar. :5 is the 1-based line within that cell. Cell 3 line 5 in JupyterLab is the same cell 3 line 5 that scan reports.\nquartobot scan . walks the project recursively; quartobot scan paper.ipynb scans one file directly. Both work the same way on notebooks.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html#excluded-paths",
+    "href": "jupyter-notebooks.html#excluded-paths",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "Excluded paths",
+    "text": "Excluded paths\nscan skips .ipynb_checkpoints/ at any depth — JupyterLab’s autosave directory is never useful to walk.\nIt also skips *.quarto_ipynb files. These are notebook copies Quarto generates during render from .qmd source; they’re staged artifacts, not authoring source, and quartobot init adds them to .gitignore. scan ignoring them keeps duplicate counts honest when a project mixes .qmd and .ipynb inputs.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "jupyter-notebooks.html#see-also",
+    "href": "jupyter-notebooks.html#see-also",
+    "title": "How to use quartobot in a Jupyter notebook manuscript",
+    "section": "See also",
+    "text": "See also\n\nFirst manuscript (15 min) — end-to-end onramp; works identically with .ipynb source.\nCLI reference: scan — every flag, every exit code.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use Jupyter notebooks"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "quartobot",
+    "section": "",
+    "text": "Write @doi:…, @pmid:…, or @arxiv:… directly in your Quarto prose. quartobot resolves each citation from Crossref, PubMed, arXiv, and other identifier sources at render time — no separate BibTeX file to hand-maintain.\n\n\nFirst manuscript in 15 min View on GitHub\nStar",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#what-you-write-what-renders",
+    "href": "index.html#what-you-write-what-renders",
+    "title": "quartobot",
+    "section": "What you write, what renders",
+    "text": "What you write, what renders\n\n\nWhat you write\nThe tidyverse [@doi:10.21105/joss.01686] is a\ncoherent grammar for data manipulation across\na family of R packages.\n\n\n→\n\n\nWhat renders\n\nThe tidyverse (Wickham et al. 2019) is a coherent grammar for data manipulation across a family of R packages.\nReferences\nWickham, H., et al. (2019). Welcome to the Tidyverse. Journal of Open Source Software, 4(43), 1686.\n\n\n\nSlots into any Quarto project — manuscripts, books, websites, and Quarto’s native project: type: manuscript. One line in _quarto.yml; no Lua filter, no quarto add, no _extensions/.\nuv tool install quartobot\nThen first manuscript in 15 minutes → walks the whole flow: scaffold, write, render, push, deploy.",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#layer-1-the-atom-resolve-a-citation",
+    "href": "index.html#layer-1-the-atom-resolve-a-citation",
+    "title": "quartobot",
+    "section": "Layer 1 · the atom · Resolve a citation",
+    "text": "Layer 1 · the atom · Resolve a citation\nIf you just need DOI / PMID / arXiv metadata at the shell.\n\n\nHand quartobot a persistent-identifier key — doi:, pmid:, arxiv:, isbn:, url:, wikidata:, pmc: — and get back CSL JSON on stdout. Pipes cleanly through jq or any agent’s shell tool. The resolver is manubot.cite.citekey_to_csl_item underneath; eight years of source-API quirks behind one call.\nHow to resolve a single citation →\n\n\nquartobot resolve --output - doi:10.21105/joss.01686 \\\n  | jq '.[0].title'\n# → \"Welcome to the Tidyverse\"\n\n\n\n\n\n\n\n\nDone — you have a single-key metadata lookup tool. Stop here or stack on Layer 2.",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#layer-2-the-manuscript-resolve-in-the-render-loop",
+    "href": "index.html#layer-2-the-manuscript-resolve-in-the-render-loop",
+    "title": "quartobot",
+    "section": "Layer 2 · the manuscript · Resolve in the render loop",
+    "text": "Layer 2 · the manuscript · Resolve in the render loop\nIf you author Quarto manuscripts, books, or websites.\n\n\n# _quarto.yml\nproject:\n  pre-render: &gt;-\n    quartobot resolve --from-scan .\n    --id-mode citation-key\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\n\n\nOne line in _quarto.yml makes quartobot resolve run before pandoc on every render. Authors write @doi:… directly in prose; the hook fetches each key, writes BibLaTeX to references.resolved.bib, and pandoc-citeproc formats the rendered output. Network only on first render; cached after. Hand-curated entries in references.bib work alongside, for the keys the resolver can’t reach.\nFirst manuscript in 15 minutes →\n\n\n\n\n\n\n\n\nDone — your manuscript builds itself with resolved citations. Stop here or stack on Layer 3.",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#layer-3-the-agent-ground-ai-assisted-drafting",
+    "href": "index.html#layer-3-the-agent-ground-ai-assisted-drafting",
+    "title": "quartobot",
+    "section": "Layer 3 · the agent · Ground AI-assisted drafting",
+    "text": "Layer 3 · the agent · Ground AI-assisted drafting\nIf you draft with Claude Desktop, Codex, Gemini, Cursor, or any agent harness with a shell.\n\n\nIf your manuscript renders citations from persistent identifiers, your AI drafting tools should look them up the same way. Two surfaces, same resolver: quartobot mcp exposes resolve_citation, scan_project, and validate_project as MCP tools for native MCP clients. For agents that already live in a shell, quartobot resolve --output - is the same call piped through stdout — equally good, sometimes preferred for portability and composition with jq. Either way, an agent checks every cite key it proposes against the source registrar before that cite reaches your draft.\nMCP + Claude Desktop → · Shell-tool agents →\n\n\n// ~/Library/Application Support/Claude/\n//   claude_desktop_config.json\n{\n  \"mcpServers\": {\n    \"quartobot\": {\n      \"command\": \"quartobot\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\n\n\n\n\n\n\n\n\nSame call, same answer. An agent that routes its proposed cite keys through quartobot gets back source-registrar metadata — Crossref for DOIs, PubMed for PMIDs, arXiv for preprints — using the same resolver your manuscript renders with. Agent metadata and rendered metadata can’t drift apart.",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#layer-4-the-publication-citations-resolve-in-ci-reviewers-preview-in-the-pr",
+    "href": "index.html#layer-4-the-publication-citations-resolve-in-ci-reviewers-preview-in-the-pr",
+    "title": "quartobot",
+    "section": "Layer 4 · the publication · Citations resolve in CI; reviewers preview in the PR",
+    "text": "Layer 4 · the publication · Citations resolve in CI; reviewers preview in the PR\nIf you publish a manuscript to GitHub Pages and want PR previews + a versions page out of the box.\n\n\nquartobot use github-ci\n# scaffolds:\n#   .github/workflows/render.yml\n#   .github/workflows/pr-closed.yml\n# uses the lean reusable workflow.\n# add --with-versioned-snapshots for the\n# per-commit /v/&lt;sha&gt;/ permalink layer.\n\n\nquartobot use github-ci scaffolds a thin GitHub Actions workflow that does three things: installs Quarto and quartobot on the runner so the citation pre-render hook works in CI, renders the manuscript on every push, and posts a sticky PR comment with the preview URL on every PR. A generated /versions/ page lists tagged releases and open PR previews. No banner injection, no per-commit deploys by default — just the latest at /, PR previews at /pr/&lt;n&gt;/, and the versions page as the discoverability surface.\nFirst manuscript, step 7 →\n\n\n\n\n\n\n\n\nReviewers see exactly what your branch renders to. The sticky PR comment links to a live preview of the manuscript at /pr/&lt;n&gt;/ — no local checkout, no “but it works on my machine,” no version drift between what reviewers read and what merges.",
+    "crumbs": [
+      "Install",
+      "Home"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html",
+    "href": "first-manuscript.html",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "",
+    "text": "This tutorial walks one path. By the end you will have a Quarto manuscript with citations resolved automatically from DOIs and PubMed IDs, rendering itself on every push, deployed to GitHub Pages with a /v/&lt;commit-sha&gt;/ immutable permalink for each commit.\nBudget: 15 minutes if you have Quarto, uv, and gh already on your machine. First render takes longer because Quarto installs TinyTeX the first time it sees a PDF format. After that, every render is fast.\nYou will not learn why the design choices are this way — that’s the Design and Citation pipeline pages’ job. This tutorial is doing, not understanding.\nTo set the example: the tooling that makes a Quarto manuscript self-rendering, citation-resolving, and version-banner-aware draws on the broader Quarto + pandoc-citeproc ecosystem; for the data side of a typical manuscript, the tidyverse (Wickham et al. 2019) is the most-cited starting point in R, single-cell methods like Seurat (Stuart et al. 2018) anchor a lot of methods-paper bibliographies, and transformer architectures (Vaswani et al. 2023) for LLM-driven analysis tooling, and reference datasets (“The Genotype-Tissue Expression (GTEx) Project.” 2013) anchor the biological claims a paper makes. Those four citations live in this paragraph, were resolved by quartobot resolve against their registrars (Crossref, bioRxiv via Crossref, PubMed), and pandoc-citeproc formatted the inline citations and bibliography section below.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#before-you-start",
+    "href": "first-manuscript.html#before-you-start",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "Before you start",
+    "text": "Before you start\nYou need:\n\nQuarto ≥ 1.4 — quarto --version. Install Quarto if needed.\nuv — uv --version. Install uv if needed; it handles the Python install for you transparently.\ngh (the GitHub CLI) — gh --version. Install gh if needed.\nA GitHub account authenticated with gh auth login.\n\nThat’s it. No separate Python install, no quarto add step, no Quarto extension to install — uv tool install quartobot brings everything along, including the resolver library.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#install-quartobot",
+    "href": "first-manuscript.html#install-quartobot",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "1. Install quartobot",
+    "text": "1. Install quartobot\nuv tool install quartobot\nThis puts quartobot on your user PATH so Quarto’s pre-render subprocess can find it without venv activation. Confirm:\n#| echo: true\nquartobot --version\nYou should see quartobot, version 0.2.0 or later.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#create-the-project",
+    "href": "first-manuscript.html#create-the-project",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "2. Create the project",
+    "text": "2. Create the project\nUse Quarto’s own scaffolder for the project shape:\nquarto create project manuscript my-paper\ncd my-paper\nQuarto writes a manuscript-shaped directory: an index.qmd, a _quarto.yml, and the layout pandoc expects for a single-document manuscript.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#wire-in-citation-resolution",
+    "href": "first-manuscript.html#wire-in-citation-resolution",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "3. Wire in citation resolution",
+    "text": "3. Wire in citation resolution\nLayer the citation pipeline on top:\nquartobot init\ninit adds two new files and modifies .gitignore: a seed references.bib you can hand-curate any non-registrar references into, plus .gitignore lines for _book/, _freeze/, .quarto/, *_files/, **/*.quarto_ipynb, and references.json. Because quarto create project already wrote a _quarto.yml, init won’t touch it; instead it prints a YAML snippet to paste in yourself. Copy the snippet and merge it into your _quarto.yml under the existing project: block — it adds the pre-render: line plus a bibliography: list with both references.bib and references.json.\nThat’s the minimum. If all you want is citations resolved from @doi: and friends, stop here.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#write-a-paragraph-with-real-citations",
+    "href": "first-manuscript.html#write-a-paragraph-with-real-citations",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "4. Write a paragraph with real citations",
+    "text": "4. Write a paragraph with real citations\nOpen index.qmd and replace the body with a paragraph that uses the cite keys quartobot supports. Authors who write the prose below get the rendered references below it for free — no hand-curating a .bib per source.\nThe tooling stack for a modern computational manuscript spans\nseveral sources. The tidyverse [@doi:10.21105/joss.01686] gives R\nusers a coherent grammar for data manipulation. Single-cell\nintegration approaches like Seurat [@doi:10.1101/460147], still on\nbioRxiv as a preprint, sit alongside transformer architectures\n[@arxiv:1706.03762] for the LLM-driven tooling now common in\nanalysis pipelines. Reference datasets like the Genotype-Tissue\nExpression Consortium's pilot analysis [@pmid:23715323] anchor the\nbiological claims.\nFour cite keys, four registrars (Crossref, bioRxiv via Crossref, arXiv, PubMed). Save the file.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#see-what-quartobot-scan-reports",
+    "href": "first-manuscript.html#see-what-quartobot-scan-reports",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "5. See what quartobot scan reports",
+    "text": "5. See what quartobot scan reports\nBefore rendering, ask quartobot what citations it sees. The same prose you just wrote, scanned by quartobot scan:\n#| echo: true\nquartobot scan fixtures/sample-paper/\nThat’s the inventory the pre-render hook will resolve when quarto render runs. Each prefix groups its keys; the summary line reports the total.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#render-locally",
+    "href": "first-manuscript.html#render-locally",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "6. Render locally",
+    "text": "6. Render locally\nquarto render\nFirst render installs TinyTeX (Quarto handles this; takes 1–2 minutes). On the second render and after, it’s seconds.\nThe pre-render hook fires before pandoc runs. It:\n\nScans index.qmd for cite keys.\nCalls each registrar (Crossref for the DOI, PubMed for the PMID, arXiv for the arXiv preprint) to resolve canonical metadata.\nWrites the resulting CSL JSON to references.json.\nHands control back to pandoc, which reads references.json and formats the citations.\n\nOpen _output/index.html (or index.pdf). The citations show as formatted references with author names, journal, year. No empty [?] placeholders.\nRe-run quarto render. Now it’s near-instant — the pre-render hook sees references.json already exists with all keys cached, skips the network round-trip, and pandoc renders straight through.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#add-the-publish-on-every-commit-ci",
+    "href": "first-manuscript.html#add-the-publish-on-every-commit-ci",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "7. Add the publish-on-every-commit CI",
+    "text": "7. Add the publish-on-every-commit CI\nIf you want every push to your GitHub repo to render the manuscript, deploy it to GitHub Pages, embed a “this version: &lt;sha&gt;” banner in the rendered HTML, and post a sticky preview comment on each PR — add the second layer:\nquartobot use github-ci\nThis scaffolds .github/workflows/render.yml (the trigger), the PR-preview cleanup workflow, the version-banner Quarto include, and prints a YAML snippet to merge into your _quarto.yml so the banner appears in the rendered HTML.\nSkip this step entirely if you already have CI you’re happy with, or if you plan to publish via quarto publish. The citation pipeline from step 3 works the same either way.\nFor the full set of inputs you can override on the scaffolded workflow (formats, manuscript-name, quarto-version, project-title, etc.), see Workflows and actions in the Reference section. Same page covers the composite actions if you’d rather compose your own workflow instead.\nAdd the snippet that quartobot use github-ci printed to your _quarto.yml. It will look roughly like:\nformat:\n  html:\n    include-before-body:\n      - _version-banner.html",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#push-to-github",
+    "href": "first-manuscript.html#push-to-github",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "8. Push to GitHub",
+    "text": "8. Push to GitHub\ngh repo create my-paper --source=. --public --push\ngh creates the repo, pushes your commit, and gives you the URL.\nThe render workflow fires on push. Watch it land:\ngh run watch\nWhen the workflow finishes, GitHub Pages serves your manuscript at https://&lt;your-handle&gt;.github.io/my-paper/. Every commit also deploys to a versioned subdirectory: https://&lt;your-handle&gt;.github.io/my-paper/v/&lt;sha&gt;/index.html. The version banner in the rendered HTML links you between them.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#open-a-pull-request",
+    "href": "first-manuscript.html#open-a-pull-request",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "9. Open a pull request",
+    "text": "9. Open a pull request\nMake a change. Push to a branch. Open a PR.\ngit checkout -b add-context\n# edit index.qmd, add another sentence with another citation\ngit add index.qmd\ngit commit -m \"Add context paragraph\"\ngit push -u origin add-context\ngh pr create --fill\nWithin a couple of minutes a sticky comment lands on the PR with a link to a preview render. Reviewers see exactly what your branch renders to without checking it out locally.\nWhen you merge the PR, quartobot use github-ci’s cleanup workflow removes the preview directory from gh-pages; the merge commit gets its own /v/&lt;sha&gt;/ permalink alongside the latest.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#you-now-have",
+    "href": "first-manuscript.html#you-now-have",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "You now have",
+    "text": "You now have\n\nA manuscript that builds itself on every push.\nCitations resolved from registrars at render time, cached so CI never sees a network blip mid-render.\nAn immutable /v/&lt;sha&gt;/ URL for every commit anyone can cite.\nPR previews via sticky comment.\nA version banner in the rendered HTML pointing at “this version” and “the latest version” of the paper.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "first-manuscript.html#where-to-next",
+    "href": "first-manuscript.html#where-to-next",
+    "title": "Tutorial: your first manuscript in 15 minutes",
+    "section": "Where to next",
+    "text": "Where to next\n\nCLI reference — every command, every flag.\nMCP server — point Claude Desktop, Codex, or Gemini Code Assist at quartobot mcp so an agent can call the resolve_citation tool while you draft.\nMigrating from manubot — if you have a manubot manuscript and want to translate the layout.\nDesign — the architecture decisions and prior art.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "First manuscript (15 min)"
+    ]
+  },
+  {
+    "objectID": "design.html",
+    "href": "design.html",
+    "title": "Design",
+    "section": "",
+    "text": "This page indexes the design material. The substantive documents live in the repo itself; this site links into them rather than duplicating.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#architecture",
+    "href": "design.html#architecture",
+    "title": "Design",
+    "section": "Architecture",
+    "text": "Architecture\nDESIGN.md is the authoritative design document. It covers:\n\nWhat “the pattern” means concretely — six components in the order an author encounters them.\nWhat already exists upstream (pandoc-manubot-cite, Quarto Manuscripts, the Venice CI pieces) so we don’t rebuild it.\nThe decisions table — why CSL JSON, why /v/&lt;full-sha&gt;/, why the HTML-only banner, why the sticky PR comment.\nQuarto features quartobot gets for free.\nOpen questions still being worked through.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#prior-art",
+    "href": "design.html#prior-art",
+    "title": "Design",
+    "section": "Prior art",
+    "text": "Prior art\ndocs/prior-art.md inventories what already exists in this space: pandoc-manubot-cite, pandoc-url2cite, pandoc-doi2bib, Quarto Manuscripts, CiteDrive, Quarto’s visual-editor citation insert, and the existing scholarly Quarto templates we don’t compete with.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#publication-plan",
+    "href": "design.html#publication-plan",
+    "title": "Design",
+    "section": "Publication plan",
+    "text": "Publication plan\ndocs/publication-plan.md covers the framing for the JOSS paper (the contribution is the pattern, not the resolver), the target co-author list (Anthony Gitter, Daniel Himmelstein, possibly Quarto / Posit folks), and the venue strategy (JOSS first; a methods/commentary paper later if the pattern gets adopted across project types).",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#conversation-notes",
+    "href": "design.html#conversation-notes",
+    "title": "Design",
+    "section": "Conversation notes",
+    "text": "Conversation notes\ndocs/conversation-notes.md is the thinking that produced the design — what was decided, what was explicitly ruled out, what changed our minds during the working sessions.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#citation-pipeline-architecture",
+    "href": "design.html#citation-pipeline-architecture",
+    "title": "Design",
+    "section": "Citation pipeline architecture",
+    "text": "Citation pipeline architecture\ndocs/citation-pipeline.md covers the settled architecture: _quarto.yml declares project.pre-render: quartobot resolve --from-scan . --id-mode citation-key, the hook runs before pandoc, and pandoc-citeproc reads the resulting CSL JSON directly. No filter, no _extensions/, no quarto add step.\nThe architecture replaced an earlier shape that wired pandoc-manubot-cite as a Lua filter declared in _quarto.yml. Two material UX gotchas in the filter shape — manubot’s pandoc 3.x version check, and the resolver’s PATH requirement at render time — are structurally unreachable under the pre-render seam. A plugin architecture for deepening manubot’s shallow CURIE prefixes follows from the same seam.\nSettled 2026-05-14 after a live end-to-end walkthrough confirmed the behavior. Templates, examples, and quartobot init all wire the pre-render hook.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#the-roadmap",
+    "href": "design.html#the-roadmap",
+    "title": "Design",
+    "section": "The roadmap",
+    "text": "The roadmap\nThe roadmap lives in GitHub issues, organized into three milestones:\n\nv0.1 — first public release: CLI + manuscript template + book template + composite actions + reusable workflow, with Zenodo DOI on tag.\nv0.2 — JOSS-ready: documentation site complete, JOSS paper submitted.\nv2 — beyond manuscripts: Hypothes.is integration, and broader Quarto project types.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "design.html#how-to-contribute-to-the-design",
+    "href": "design.html#how-to-contribute-to-the-design",
+    "title": "Design",
+    "section": "How to contribute to the design",
+    "text": "How to contribute to the design\nCONTRIBUTING.md covers the mechanics. The short version: open an issue using the design proposal template, state the question, the options you considered, and the option you’d pick. Strong opinions on pattern naming, defaults, scope, or co-author strategy are all in scope.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Design"
+    ]
+  },
+  {
+    "objectID": "coming-from.html",
+    "href": "coming-from.html",
+    "title": "Coming from…",
+    "section": "",
+    "text": "quartobot pulls people in from a few different starting points. Each has a different “you’ll need to learn this” delta. This page is the honest assessment — what you’ll trade, what you’ll gain, what to learn first.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#prerequisites",
+    "href": "coming-from.html#prerequisites",
+    "title": "Coming from…",
+    "section": "Prerequisites",
+    "text": "Prerequisites\nYou’ll be most comfortable with quartobot if you already:\n\nWrite in Markdown. Quarto’s source language is Markdown with Quarto extensions. If you’re new to Markdown, Quarto’s Get Started covers the basics in ~15 minutes.\nHave a GitHub account and know how to push to a repo. quartobot is a git-native workflow. If you’ve never used GitHub, the GitHub Quickstart is the right starting point — you don’t need to be a deep git user, but the words “commit,” “push,” “branch,” “pull request” should feel familiar.\nAre willing to open a terminal. Day-to-day is short: git pull, git push, quarto render. Initial setup is uv tool install quartobot (one line) and a few quartobot commands.\nUnderstand pull requests as a collaboration shape. A branch, a diff, a comment thread, a merge. Most of quartobot’s collaborative value lives in the PR-review-of-prose pattern — co-authors suggest changes on a branch, you discuss in PR comments, the rendered preview updates on each push.\n\nIf those four boxes tick, you’re set. If they don’t yet, the sections below name what to learn for each starting point.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#coming-from-google-docs",
+    "href": "coming-from.html#coming-from-google-docs",
+    "title": "Coming from…",
+    "section": "Coming from Google Docs",
+    "text": "Coming from Google Docs\nquartobot probably isn’t your next step. The git + PR workflow that’s load-bearing here works best when you already think in text-files-as-source — and for most Google Docs users (especially collaboratively-written multi-author papers), the lift to get a whole co-author group onto GitHub is too steep to be worth doing just to fix citations.\nA better path: try Quarto itself first. It works on plain Markdown, renders to PDF and DOCX, has a live preview, and runs against a manual references.bib. You can adopt Quarto without git or GitHub; you just lose the per-commit collaboration story (which Google Docs solves differently).\nOnce you’ve spent a few months writing manuscripts in Quarto and the git workflow feels natural — typically because you’ve collaborated on a Quarto project with someone who already uses it — come back here. By that point you’ll be in the “Coming from Quarto with a manual references.bib” persona below, and quartobot is a one-line addition.\nIf you’re confident you want to skip the Quarto-first step anyway: the prerequisites at the top of this page name what to learn, and GitHub Desktop plus GitHub’s Hello World are the gentlest on-ramps. Budget at least a few weeks for the collaboration workflow to feel natural — most of that is teaching co-authors, not learning git yourself.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#coming-from-manubot",
+    "href": "coming-from.html#coming-from-manubot",
+    "title": "Coming from…",
+    "section": "Coming from manubot",
+    "text": "Coming from manubot\nYou’re already comfortable with the persistent-identifier citation pattern. quartobot uses manubot’s exact citation key vocabulary (@doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmcid:) and reuses manubot.cite for the actual resolution under the hood. Your prose is mostly portable.\nWhat’s the same:\n\nCitation keys, exactly. [@doi:10.1371/journal.pcbi.1007128] works in both worlds.\nThe collaboration model — git, PRs, deploys to gh-pages.\nThe seven persistent-identifier handlers (doi, pmid, arxiv, isbn, url, wikidata, pmcid).\n\nWhat’s different:\n\nThe rendering layer is Quarto, not the manubot Rootstock template. This means: no metadata.yaml for authors and affiliations — Quarto puts those in _quarto.yml’s frontmatter, with a different shape. The content/ directory becomes plain .qmd files in your project. The manubot-specific HTML niceties (contribution statements, ORCID badges, social-card metadata) need to be re-implemented as Quarto includes or filters. The Migrate from manubot guide covers the field-by-field mapping.\nCitation resolution happens via a Quarto pre-render hook, not via the pandoc-manubot-cite filter. The seam is structurally cleaner — no pandoc version constraints, no PATH-at-render-time concerns. See Differences from manubot for the full mechanical comparison.\nCaching is the default. references.json is the cache; commit it and CI never hits Crossref. manubot’s default is no cache, so if you’ve been fighting Crossref rate limits in CI, this fixes that without configuration.\nPer-commit /v/&lt;sha&gt;/ permalinks are opt-in via quartobot use github-ci --with-versioned-snapshots, not the default. The reason: most new adopters don’t need the immutable permalink layer on day one, and shipping it as the default raises the onboarding floor (snapshot retention to configure, banner template to understand). The full manubot pattern is one flag away — if you’re porting an existing manubot project, you’ll almost certainly want it.\n\nMigration path: point Quarto at your existing manuscript prose (rename content/*.md to .qmd), quartobot init, quartobot use github-ci --with-versioned-snapshots (if you want the full pattern), push. Hand-curated .bib entries continue to work alongside the auto-resolved ones; see the Bibliography collisions subsection below for the collision-resolution flow.\n# from a manubot project root:\nmv content/* ./   # or similar restructuring\nuv tool install quartobot\nquartobot init\nquartobot use github-ci --with-versioned-snapshots",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#coming-from-quarto-with-a-manual-references.bib",
+    "href": "coming-from.html#coming-from-quarto-with-a-manual-references.bib",
+    "title": "Coming from…",
+    "section": "Coming from Quarto with a manual references.bib",
+    "text": "Coming from Quarto with a manual references.bib\nYou already know Quarto. The friction you’re solving is the BibTeX maintenance burden for DOI/PMID-heavy writing — copy the citation out of Crossref, paste into .bib, hope the export was complete, re-export when the metadata gets fixed upstream.\nWhat you keep: everything about your current Quarto setup. Project structure, formats, themes, the visual editor, your render flow.\nWhat changes: install the CLI, add one line to _quarto.yml:\nuv tool install quartobot\nproject:\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbibliography:\n  - references.bib    # still here — hand-curated entries\n  - references.resolved.bib   # new — auto-resolved entries\nNow you can write @doi:10.1038/... directly in prose and the entry appears in the bibliography on the next render. Hand-curated entries in references.bib keep working unchanged for the things the resolver can’t reach (preprints not on Crossref, edge cases, custom citations).\nCaching: references.json is both the output and the cache. First render hits the network for each new key; subsequent renders are network-free for keys already in the file. Commit references.json to git and CI never hits Crossref / PubMed / arXiv either, which makes builds reproducible and immune to upstream registrar outages.\nBibliography collisions. If the same key (doi:10.1038/abc) appears in both references.bib (hand-curated) and references.json (auto-resolved), pandoc-citeproc’s behavior is its default later-wins — which is the sort of silent precedence that produces a wrong fact in your rendered output without obvious warning. The quartobot reconcile command is designed to force an explicit choice (accept-bib, accept-json, or interactive picker per collision) and is the planned fix for this. Until that ships, the practical workaround is: if you hand-curate an entry for a key the resolver is also handling, pick one source and remove the other. quartobot scan will list every key in your project so you can audit.\nRelationship to Quarto Manuscripts. Quarto 1.4 ships a first-party project: type: manuscript project type — different from quartobot. That feature gives you the manuscript-shaped project layout (JATS export, notebook embedding, etc.); quartobot adds citation resolution on top. The two compose: declare type: manuscript in _quarto.yml and add quartobot’s pre-render hook. There’s an open design question on whether to extend or fork the first-party template for new-project scaffolds; for adoption-into-an-existing-Quarto-project, the two layers don’t interfere.\nPre-quartobot lift: essentially zero. You’re already comfortable with Quarto; this is a one-line addition.\nSee first manuscript in 15 minutes for the guided walkthrough; the “existing Quarto project” path in choose a path in is the minimum-friction option.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#coming-from-zotero",
+    "href": "coming-from.html#coming-from-zotero",
+    "title": "Coming from…",
+    "section": "Coming from Zotero",
+    "text": "Coming from Zotero\nZotero is excellent for reference management — discovering papers, organizing collections, syncing across devices, browser-based one-click capture. None of that is what quartobot does.\nThe friction Zotero leaves is in the writing workflow itself: pulling a citation from Zotero into your prose requires the side panel, the Better BibTeX export, and a sync step every time the export drifts from what’s in the database.\nHonest framing: quartobot doesn’t replace Zotero. You can use both.\n\nZotero stays your discovery and organization layer. Browser capture, PDF library, tag-based collections, syncing.\nquartobot handles the citation insertion at writing time. You type the DOI inline; the bibliography assembles itself.\n\nIf your workflow today is “I want to cite a paper I already found last week,” opening Zotero to grab the citation key still works. But when you’re reading a paper online and want to cite it immediately, @doi: is one fewer round-trip.\nPre-quartobot lift: the same Markdown + git + terminal prerequisites listed at the top of this page. If you’ve been using Zotero with LaTeX or Pandoc already, the rest is small.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#coming-from-raw-latex-or-overleaf",
+    "href": "coming-from.html#coming-from-raw-latex-or-overleaf",
+    "title": "Coming from…",
+    "section": "Coming from raw LaTeX or Overleaf",
+    "text": "Coming from raw LaTeX or Overleaf\nLaTeX gives you precise typesetting control; quartobot doesn’t compete on that axis. But if your current pain is collaborative editing (merging two co-authors’ edits in Overleaf), keeping the BibTeX file maintained, or maintaining the LaTeX-Markdown-PDF translation in your head, Quarto-plus-quartobot is worth a look.\nWhat you give up:\n\nDirect control over the typesetting at the LaTeX-macro level. You can still drop in raw LaTeX for math and custom commands in PDF output, but the document body is Markdown, not \\section{}.\nThe Overleaf editor’s live PDF preview. Quarto has a similar feature (quarto preview), but it’s a local-machine thing, not a hosted-editor thing.\n\nWhat you gain:\n\nThe same source renders to HTML, PDF, and DOCX. No more separate TeX and Word versions for journals that ask for both.\nCollaborative editing via git and PRs. No more “my co-author broke the build by editing the references file while I was writing the intro.”\nAutomatic citation resolution from DOIs and PMIDs. No more hand-maintained BibTeX entries.\n\nPre-quartobot lift: you already know LaTeX, which means you understand the build-time-rendering model. Learning Markdown is genuinely fast — Quarto’s Authoring page is enough for most. Learning git takes longer, but Overleaf’s git integration probably exposed you to the basics already.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#when-quartobot-isnt-for-you",
+    "href": "coming-from.html#when-quartobot-isnt-for-you",
+    "title": "Coming from…",
+    "section": "When quartobot isn’t for you",
+    "text": "When quartobot isn’t for you\nA few honest signals that another tool may fit better:\n\nYou write predominantly without citations (a novel, a poem, a newsletter). quartobot’s primary value is citation resolution; if you don’t cite, you’re paying setup cost for nothing.\nYou rely on custom BibTeX fields the source registrars don’t return — annotations, non-standard entry types, contribution statements baked into the bib entry. quartobot’s auto-resolved entries carry only what Crossref / PubMed / arXiv expose, so a reliance on bespoke fields means staying on hand-curated .bib for those entries. (The two can coexist — see the bib-collision note in “Coming from Quarto” above — but if every entry is custom-curated, the resolver adds little.)\nYou need real-time synchronous editing more than you need reproducibility. Google Docs / Notion / Quip / Word-Online win on that axis and always will.\nYou’re writing alone, will never publish to gh-pages, and don’t want a GitHub repo. The minimum setup still costs you 30 minutes; a local Quarto + manual .bib workflow is meaningfully simpler if you’ll never use the CI half.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "coming-from.html#see-also",
+    "href": "coming-from.html#see-also",
+    "title": "Coming from…",
+    "section": "See also",
+    "text": "See also\n\nFirst manuscript in 15 minutes — the canonical guided walkthrough, with all the prerequisites assumed.\nChoose a path in — three minimum-friction paths for “new manuscript,” “existing Quarto project,” and “I just want auto-resolved citations.”\nDifferences from manubot — the detailed mechanical comparison for users porting from manubot.",
+    "crumbs": [
+      "Install",
+      "Coming from…"
+    ]
+  },
+  {
+    "objectID": "cli.html",
+    "href": "cli.html",
+    "title": "The CLI: quartobot",
+    "section": "",
+    "text": "A Python CLI for pre-render and out-of-render work. quartobot resolve runs as a Quarto pre-render hook and calls manubot.cite directly to populate the bibliography before pandoc starts. scan, validate, init, and use round out the surface for CI-lint and scaffolding.\nquartobot depends on manubot as a Python library. See Install for uvx, editable, and post-v0.1-tag pip install paths.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "CLI"
+    ]
+  },
+  {
+    "objectID": "cli.html#pre-render-commands",
+    "href": "cli.html#pre-render-commands",
+    "title": "The CLI: quartobot",
+    "section": "Pre-render commands",
+    "text": "Pre-render commands\n\nquartobot scan\nWalks .qmd, .md, .Rmd, and .ipynb files under a path, extracts every cite key, classifies each one (manubot prefix, bare DOI, or hand-curated), groups the results, and reports repetition counts and cross-file duplicates with file:line locations. Pure read. No network. Pure reporter, too — scan always exits 0 once it finishes; gating lives in validate.\n$ quartobot scan .\narxiv:\n  2104.10729 (2x)\ndoi:\n  10.1038/s41586-024-12345\n  10.1371/journal.pcbi.1007128 (3x)\npmid:\n  31479462\n(hand-curated):\n  quarto2024\n\n5 unique key(s), 7 total occurrence(s) across 3 file(s).\n\nDuplicates:\n  @doi:10.1371/journal.pcbi.1007128:\n    intro.qmd:14\n    methods.qmd:42\n    notebook.ipynb:cell3:9\nPrefixes are listed alphabetically; hand-curated keys appear last.\nThe scan is heuristic — it strips YAML/TOML frontmatter, fenced code blocks (``` / ~~~), and inline code spans before searching, so decoys like @fake:notacite inside backticks won’t surface. For .ipynb files, only markdown cells are scanned; cell index appears alongside line number (paper.ipynb:cell3:9). The authoritative parse happens at render time inside pandoc citeproc.\nPass --no-recursive to scan only files directly under the given path. Render outputs and tool caches (_site/, _book/, _freeze/, .quarto/, .git/, .ipynb_checkpoints/, etc.) are skipped at any depth.\nExit codes:\n\n0 — scan completed. Always. Repeated keys show up in the listing ((Nx) next to the identifier, plus a “Duplicates:” section when a key crosses file boundaries) but they don’t gate the exit.\n2 — bad arguments.\n\nWire validate into pre-commit / CI when you want a gate.\n\n\nquartobot resolve\nPre-fetch persistent-identifier citations via manubot.cite and write the resulting CSL JSON to disk. Designed to run as a Quarto pre-render hook declared in _quarto.yml:\nproject:\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n$ quartobot resolve --from-scan . --id-mode citation-key\n  ✓ doi:10.1371/journal.pcbi.1007128 → YuJbg3zO\n  ✓ pmid:31479462 → r3UbYxrJ\n  ✓ arxiv:2104.10729 → OCxCvqZo (cached)\n\n3 resolved (1 from cache). Wrote 3 entries to references.resolved.bib.\nPass keys as arguments (quartobot resolve doi:10.x/y pmid:12345) or use --from-scan PATH to resolve every persistent-identifier key in a project. Hand-curated keys (no recognized prefix) are skipped — those live in references.bib and pandoc citeproc handles them.\n--id-mode citation-key writes the CSL id field as the user’s prose key (doi:10.1371/...) so pandoc-citeproc matches [@doi:...] in the source directly. Without it, manubot’s canonical short hash (YuJbg3zO) goes in id and pandoc-citeproc silently fails to match prose keys. The pre-render hook architecture depends on this flag.\nresolve writes two artifacts by default: references.resolved.bib (BibLaTeX, the file pandoc reads at render — list this under bibliography: in _quarto.yml) and references.json (CSL JSON cache, gitignored, read on the next resolve for cache hits). Override either with --bib-output PATH or --output PATH. The --cache option defaults to --output, so re-runs are idempotent. --dry-run reports what would be resolved without making any network calls.\nPass --output - to stream the CSL JSON to stdout instead of a file — the one-shot lookup shape for shell-tool agents and scripts that pipe through jq. Stdout mode skips the BibLaTeX write:\n$ quartobot resolve --output - doi:10.1371/journal.pcbi.1007128 | jq '.[0].title'\n\"Open collaborative writing with Manubot\"\nIn stdout mode the summary line goes to stderr and no file writes happen. Cache reads still work when --cache &lt;path&gt; is set explicitly.\nExit codes:\n\n0 — every key resolved (cache hits count as success).\n1 — one or more keys failed (network error, Crossref 404, etc.).\n2 — bad arguments.\n\n\n\nquartobot validate\nPre-flight / CI-lint surface. Static config checks against a Quarto project — no network. Run this in CI to catch the most common foot-guns before they reach a render.\n$ quartobot validate .\n  ✓ _quarto.yml exists\n  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib\n  ✗ pre-render hook — `quartobot resolve` is invoked but `--id-mode citation-key` is missing. Without it, CSL `id`s are manubot's short hashes (`YuJbg3zO`), not the prose keys (`doi:10.1371/...`), and pandoc-citeproc silently fails to match any cites.\n  ✓ resolved bibliography in `bibliography:` — `references.resolved.bib` listed in `bibliography:`\n  ✓ no duplicate cite keys — 5 unique key(s) in 3 file(s)\n\n1 of 5 check(s) failed. Exit 1.\nChecks run:\n\n_quarto.yml exists and parses as YAML.\nbibliography: is declared (as a string or list).\nproject.pre-render calls quartobot resolve with --id-mode citation-key. The flag is load-bearing — without it, manubot’s canonical short hashes replace the user’s prose keys and pandoc-citeproc silently fails to match anything.\nreferences.resolved.bib appears in bibliography: — the most common silent failure under the pre-render hook architecture, since without it pandoc citeproc never reads what quartobot resolve wrote. The legacy v0.3 references.json is accepted with a migration hint.\nNo cite key appears in more than one file. Same-key-twice in the same file is the normal academic-writing case (one source, several claims) and is not flagged. The check is intentionally narrow: cross-file duplication is the case the chunked-content pattern can produce by accident; same-file repetition is intent.\n\nCitation-resolution checks (“does this DOI actually resolve at Crossref?”) are out of scope here — they need network. Run quartobot resolve --dry-run --from-scan . separately for that.\nExit codes: 0 if every check passes, 1 on any failure.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "CLI"
+    ]
+  },
+  {
+    "objectID": "cli.html#scaffolding-commands",
+    "href": "cli.html#scaffolding-commands",
+    "title": "The CLI: quartobot",
+    "section": "Scaffolding commands",
+    "text": "Scaffolding commands\n\nquartobot init\nScaffold the citation pipeline into an existing (or empty) Quarto project:\n$ quartobot init\nProject type: manuscript\n\n  + _quarto.yml  [written]\n  + references.bib  [written]\n  ~ .gitignore  [appended] — added 7 line(s)\n\nNext steps:\n  1. Confirm `quartobot` is on PATH: `quartobot --version`\n     (install with `uv tool install git+https://github.com/seandavi/quartobot`)\n  2. Add citations to your prose: @doi:..., @pmid:..., etc.\n  3. quarto render\n\nTo add the version banner + GitHub Actions CI, run `quartobot use github-ci` after this.\ninit writes only what the citation pipeline needs: _quarto.yml wired with the quartobot resolve pre-render hook and a bibliography: list, a seed references.bib, and a .gitignore augment so references.resolved.bib (regenerated each render) stays out of the repo. Three files, nothing else.\nConservative — never overwrites existing files. If _quarto.yml already exists, prints a YAML snippet to merge in manually instead of touching it. .gitignore is the one file modified in place (idempotent, appends only).\n--project-type {auto,manuscript,book} controls what gets written; auto detects from _quarto.yml, falling back to manuscript.\n\n\nquartobot use github-ci\nScaffold the GitHub Actions render workflow + PR-preview cleanup — the manuscript-as-software CI machinery that used to ride along with init. Opt-in, idempotent, scoped to one job.\nBy default it scaffolds the lean pipeline: latest deploy at /, PR preview at /pr/&lt;n&gt;/, generated /versions/ page, sticky PR comment. No per-commit permalinks, no banner, no snapshot retention.\n$ quartobot use github-ci\nProject type: manuscript\nPipeline:     lean\n\n  + .github/workflows/render.yml  [written]\n  + .github/workflows/pr-closed.yml  [written]\n\nNext steps:\n  1. Commit the new files and push to GitHub.\n  2. The render workflow fires on push to main and on PRs.\n  3. After the first push, the manuscript lands at `/`,\n     the `/versions/` page lists tagged releases and open\n     PR previews, and PRs get a sticky comment with links.\nFor the v0.1 manubot-pattern pipeline (per-commit /v/&lt;sha&gt;/ permalinks + snapshot retention + HTML version banner), pass --with-versioned-snapshots. That mode also writes _version-banner.html.template + _version-banner.html and prints a snippet for the _quarto.yml banner include.\nThe scaffolded render.yml is a thin caller of one of the upstream reusable workflows. For the full input list, the composite-action references, and the standalone-composition pattern, see Workflows and actions.\nRe-running is safe: files already on disk are left alone and report as skipped-exists. When _quarto.yml already declares the banner include (versioned-snapshots mode), the manual-merge snippet is suppressed.\nuse is a click group, designed to grow. github-ci is the first inhabitant; future siblings (use jupyter-notebooks, use pre-commit, use mcp, use joss-paper) are scoped but not yet shipped. The naming convention follows R’s usethis package: one verb (use), one role per subcommand.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "CLI"
+    ]
+  },
+  {
+    "objectID": "cli.html#philosophy",
+    "href": "cli.html#philosophy",
+    "title": "The CLI: quartobot",
+    "section": "Philosophy",
+    "text": "Philosophy\nThe CLI calls manubot.cite (the resolver library) directly from a Quarto pre-render hook and lets pandoc citeproc (the renderer) consume the resulting CSL JSON. Every command is either pre-render (do work ahead of quarto render so the render itself is faster and more reliable) or out-of-render (init, scan, validate — work that doesn’t touch render at all).\nOpaque-by-default for the CI surface: a consumer’s .github/workflows/render.yml is a thin caller pointing at the upstream reusable workflow. quartobot detach (when it ships) is the escape hatch when consumers want to fork the pipeline. The opposite of r-lib/actions, which copies 150 lines into every consumer repo. quartobot’s default is friendlier; the escape hatch matches their model for users who want it.",
+    "crumbs": [
+      "Install",
+      "Reference",
+      "CLI"
+    ]
+  },
+  {
+    "objectID": "deploying.html",
+    "href": "deploying.html",
+    "title": "Deploying a quartobot manuscript",
+    "section": "",
+    "text": "There are two reasonable ways to get a quartobot-rendered manuscript on the web. They differ in what you pay (workflow complexity) for what you get (PR previews, a versions index, multi-format download links). Both produce the same article content; the difference is in the publishing surface around it.\nThis page lays out both so you can pick deliberately rather than landing on whichever happens to be the example you copy first.\n\nPath 1: quarto publish gh-pages\nThe simple route. Quarto ships with a built-in publish subcommand that targets several destinations (gh-pages, quarto-pub, netlify, connect, etc.). For gh-pages, it renders the project, creates or updates a local gh-pages branch, pushes the rendered output there, and adds .nojekyll.\nA 20-line workflow gets you a deploy on every push to main:\n# .github/workflows/publish.yml\nname: Publish\non:\n  push:\n    branches: [main]\n  workflow_dispatch:\npermissions:\n  contents: write\njobs:\n  publish:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with: { fetch-depth: 0 }\n      - uses: quarto-dev/quarto-actions/setup@v2\n      - uses: astral-sh/setup-uv@v3\n      - run: uv tool install quartobot\n      - uses: quarto-dev/quarto-actions/publish@v2\n        with:\n          target: gh-pages\n        env:\n          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}\nAfter the first run, enable GitHub Pages with Source set to “Deploy from a branch” and Branch gh-pages / / (root). From then on, every push to main redeploys.\nWhat you get: whatever Quarto produced lands on the site. For a type: manuscript project, that includes the HTML article, JATS sidecar, MECA bundle, and any download formats configured in _quarto.yml.\nWhat you don’t get: PR preview deployments, a versions index, or sticky-comment download links on pull requests.\n\n\nPath 2: quartobot’s reusable workflow\nThe full-stack route. quartobot publishes a reusable workflow that the manuscript repo invokes with a few inputs:\n# .github/workflows/render.yml\nname: Render\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\njobs:\n  render:\n    uses: seandavi/quartobot/.github/workflows/render-reusable-lean.yml@main\n    permissions:\n      contents: write\n      pull-requests: write\n    with:\n      project-type: manuscript\nThis is what examples/manuscript-typed/ and the 2026-quartobot-manuscript reference repo use.\nWhat you get on top of Path 1:\n\nPR preview deployments at https://&lt;user&gt;.github.io/&lt;repo&gt;/pr/&lt;N&gt;/, recreated on every push to the PR branch. A sticky comment on the PR links to it.\nA versions index at /versions/ listing every release that’s been published, with commit subjects, tag names, and dates pulled from the git history at deploy time.\nMulti-format download links. Non-HTML formats are aliased to a stable name (manuscript.pdf, manuscript.docx) for clean download URLs, alongside Quarto’s own index.{pdf,docx} names.\n\nWhat it costs: a gh-pages branch that the workflow reads, modifies, and pushes back on every deploy. Concurrent deploys are serialized via a workflow-level concurrency group. The reusable workflow itself is maintained in this repo — see .github/workflows/render-reusable-lean.yml.\n\n\nWhich one?\n\n\n\n\n\n\n\nIf you…\nUse\n\n\n\n\nAuthor solo, no PRs against the manuscript\nPath 1\n\n\nWant one workflow file and minimal concepts\nPath 1\n\n\nCollaborate via PRs and want preview deployments\nPath 2\n\n\nWant a browsable history of every release\nPath 2\n\n\nAre migrating from a v0.5 quartobot project\nPath 2 (your existing render.yml already uses it)\n\n\n\nBoth paths work with type: manuscript projects — the reusable workflow in v0.6.0 stages _manuscript/ wholesale, matching what quarto publish gh-pages does.\n\n\nEnabling GitHub Pages on the repo\nEither path produces a gh-pages branch. Pages itself still has to be turned on once:\ngh api -X POST repos/&lt;owner&gt;/&lt;repo&gt;/pages \\\n  -f 'source[branch]=gh-pages' \\\n  -f 'source[path]=/'\nOr in the UI: Settings → Pages → Source = “Deploy from a branch” → Branch = gh-pages / / (root).\nThe first deploy can take a minute or two for the Pages CDN to pick up the new content.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Deploy to GitHub Pages"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html",
+    "href": "differences-from-manubot.html",
+    "title": "Differences from manubot",
+    "section": "",
+    "text": "quartobot reuses manubot.cite (the resolver library) and adopts the manuscript-as-software pattern wholesale. The cite-key syntax is identical. The /v/&lt;sha&gt;/ permalink convention is identical. The hand-curated bibliography slot is identical in spirit. What’s different is the publishing substrate underneath.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html#whats-the-same",
+    "href": "differences-from-manubot.html#whats-the-same",
+    "title": "Differences from manubot",
+    "section": "What’s the same",
+    "text": "What’s the same\n\nCitation by persistent identifier. @doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmcid:, plus bare DOIs (@10.1371/journal.pcbi.1007128). Same prefixes, same normalization rules, same handlers — quartobot resolve calls manubot.cite directly, so you’re getting manubot’s resolver behavior unchanged. One small canonicalization layered on top: a trailing / in a @url: key (and trailing .,;:!?) is stripped at scan time, because pandoc’s cite-key parser strips it during parse and the resolver-side and consumer-side keys would otherwise disagree. The stripped form is what lands in references.resolved.bib.\nCSL JSON for auto-resolved entries, .bib for hand-curated. Both declared in the project config, merged at render by pandoc citeproc.\nVersioned permalinks at /v/&lt;full-sha&gt;/. Long-form SHA in the URL, short SHA shown to humans. Latest-main at /. Snapshots immutable.\nVersioned-source workflow. Git repository, every commit rendered by CI, PRs reviewable as diffs over prose.\nCite manubot. Himmelstein et al. 2019 is the foundational paper. If you use quartobot in published work, cite it.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html#whats-different",
+    "href": "differences-from-manubot.html#whats-different",
+    "title": "Differences from manubot",
+    "section": "What’s different",
+    "text": "What’s different\nProject shape. Manubot is manuscript-shaped by design — the rootstock template assumes a single document with sequential content/01.foo.md, 02.bar.md, etc. that get concatenated at build. Quarto covers manuscripts but also books, websites, slides, dashboards, and courseware — each a first-party project type with its own conventions. quartobot ships manuscript and book templates today; the same pre-render hook works on every Quarto project type, so the pattern travels with you if you later want a book, a course site, or a poster.\nCitation invocation. Manubot ships pandoc-manubot-cite, a pandoc filter you can declare in _quarto.yml. quartobot doesn’t use that filter. Instead, quartobot resolve runs as a Quarto pre-render hook before pandoc starts and writes CSL JSON to references.json; pandoc citeproc reads that file directly with no custom filter in the chain. The rationale is in docs/citation-pipeline.md — two material UX gotchas in the filter shape (manubot’s pandoc 3.x version check, the resolver’s PATH requirement at render time) become structurally unreachable under the pre-render seam, and the seam opens a citation-plugin architecture that the filter form couldn’t support.\nBuild pipeline. Manubot has a bespoke build pipeline (build/build.sh + a chain of Python scripts) that concatenates content, runs the filter, generates HTML and PDF, and stages outputs. quartobot uses Quarto’s standard render pipeline (which runs pandoc with citeproc, executes code where present, and writes to the project’s configured output dir) plus a thin GitHub Actions workflow on top for the permalink / banner / PR-preview machinery. The CI workflow is ten lines in a consumer repo (render.yml calling our reusable workflow); the manubot-side build/ directory has no equivalent here.\nFilename and prose syntax. Manubot uses .md. Quarto uses .qmd for files that may contain executable code, and reads .md the same way for pure-prose files. Manubot markdown is a subset of pandoc markdown; Quarto markdown is a superset that adds cross-references (@fig-, @tbl-, @sec-, @eq-), format-conditional content (::: {.content-visible when-format=\"…\"}), shortcodes, and a richer set of fenced-div extensions. Your existing manubot prose will render through Quarto unchanged in the common case; the new affordances are opt-in.\nCode execution. Manubot doesn’t natively execute code — figures and tables go in as static files. Quarto runs R, Python, and Julia through knitr and Jupyter kernels at render time, embeds output back into the document, and caches results in _freeze/. For a manuscript driven by code (hackathons, computational biology, ML), that’s the difference between “regenerate figures by hand and check them in” and “edit the source, push, CI re-runs the analysis.”\nTheming and visual surface. Manubot has one look. Quarto ships Bootswatch themes, custom SCSS support, light/dark variants, syntax highlighting themes, code-copy buttons, accessible semantic HTML by default. Authors can change the entire look with theme: cosmo → theme: flatly in _quarto.yml.\nOutput formats. Manubot’s primary outputs are HTML and PDF. Quarto adds DOCX (often required for journal submission), JATS XML (what journals actually ingest), ePub, and revealjs slides — all from the same source. The manuscript template’s CI renders HTML, PDF, and DOCX on every push.\nVisual editor. RStudio and VS Code both ship a Quarto visual editor with citation-insert from DOI / Crossref / PubMed built in — a partial in-IDE version of what auto-resolution automates at build time, useful when you want to look up a citation interactively. No equivalent in manubot’s tooling.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html#what-quarto-adds-on-top",
+    "href": "differences-from-manubot.html#what-quarto-adds-on-top",
+    "title": "Differences from manubot",
+    "section": "What Quarto adds on top",
+    "text": "What Quarto adds on top\nThese come from Quarto, not from quartobot, but they’re available on any quartobot project because the substrate is Quarto:\n\nCross-references that number themselves across formats: @fig-volcano-plot, @tbl-cohort, @sec-methods, @eq-bayes.\nMargin notes via .column-margin — Tufte-style sidebar content without templating gymnastics.\nCallouts (note, tip, warning, important, caution) for asides that aren’t blockquotes.\nTabsets for tabbed HTML content where it helps.\nHypothes.is annotations in one config line: format.html.comments.hypothesis: true.\nFull-text search built-in on book and website project types.\nIncludes and shortcodes for splitting files and passing values from CI cleanly.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html#what-manubot-has-that-quartobot-doesnt",
+    "href": "differences-from-manubot.html#what-manubot-has-that-quartobot-doesnt",
+    "title": "Differences from manubot",
+    "section": "What manubot has that quartobot doesn’t",
+    "text": "What manubot has that quartobot doesn’t\nMostly nothing structural — quartobot deliberately reuses manubot’s load-bearing pieces. The list of things you’d lose moving over is narrow:\n\nManubot’s rootstock template integration. Manubot ships a specific template repo with its own conventions. quartobot deliberately doesn’t: Quarto already ships quarto create project manuscript (and book, and website), and quartobot init layers the citation-resolution + CI machinery on top. Different shape, same outcome.\nManubot-specific author / reviewer affiliations metadata. Manubot’s metadata.yaml has bespoke fields for author ORCIDs, reviewer credit, contribution statements. Quarto’s YAML front-matter has analogous fields (author:, affiliations:) but the shape isn’t a one-to-one match — see Migrating from manubot for the translation.\nmanubot CLI commands beyond cite. Manubot has a fuller CLI (manubot process, manubot webpage, etc.) that orchestrates its bespoke build. quartobot’s CLI is smaller (scan, validate, resolve, init) because the rendering itself is Quarto’s job.\n\nIf you’re using manubot for the resolver and the manuscript-as-software pattern, you’re using exactly what quartobot keeps. If you’re using manubot for the rootstock conventions specifically, see the migration guide for the translation.",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "differences-from-manubot.html#see-also",
+    "href": "differences-from-manubot.html#see-also",
+    "title": "Differences from manubot",
+    "section": "See also",
+    "text": "See also\n\nMigrating from manubot — concrete steps\ndocs/citation-pipeline.md — why the pre-render hook, not a filter\nmanubot — the upstream\nHimmelstein et al. 2019 — the foundational paper",
+    "crumbs": [
+      "Install",
+      "Explanation",
+      "Differences from manubot"
+    ]
+  },
+  {
+    "objectID": "getting-started.html",
+    "href": "getting-started.html",
+    "title": "Getting started",
+    "section": "",
+    "text": "Pick the one that matches where you are.\n\n\nuv tool install quartobot\nquarto create project manuscript my-paper\ncd my-paper\nquartobot init\nOptional: quartobot use github-ci to scaffold the GitHub Actions render workflow + version banner + permalink CI.\nquarto create project lays out a manuscript-shaped Quarto project (index.qmd, _quarto.yml, the directory layout pandoc expects); quartobot init layers the citation-resolution pre-render hook and a seed references.bib on top. use github-ci is the opt-in manuscript-as-software CI on top of that.\nSame pattern for books and websites — substitute book or website for manuscript in the quarto create line.\n\n\n\nuv tool install quartobot\nquartobot init\ngit add . && git commit -m \"Adopt the quartobot citation pipeline\"\ngit push\nquartobot init wires the quartobot resolve pre-render hook into _quarto.yml, declares references.bib + references.resolved.bib under bibliography:, and seeds an empty references.bib. Three files, idempotent — run it again and nothing breaks. For the GitHub Actions render workflow + version banner, follow up with quartobot use github-ci.\n\n\n\nuv tool install quartobot\nThen in your _quarto.yml:\nproject:\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nAnd in your prose:\nThe pattern is described in @doi:10.1371/journal.pcbi.1007128.\nThat’s the minimum. No filter, no quarto add, no extension. The hook runs before pandoc on every render; pandoc-citeproc reads references.resolved.bib and references.bib together.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Choose a path in"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#three-paths-in",
+    "href": "getting-started.html#three-paths-in",
+    "title": "Getting started",
+    "section": "",
+    "text": "Pick the one that matches where you are.\n\n\nuv tool install quartobot\nquarto create project manuscript my-paper\ncd my-paper\nquartobot init\nOptional: quartobot use github-ci to scaffold the GitHub Actions render workflow + version banner + permalink CI.\nquarto create project lays out a manuscript-shaped Quarto project (index.qmd, _quarto.yml, the directory layout pandoc expects); quartobot init layers the citation-resolution pre-render hook and a seed references.bib on top. use github-ci is the opt-in manuscript-as-software CI on top of that.\nSame pattern for books and websites — substitute book or website for manuscript in the quarto create line.\n\n\n\nuv tool install quartobot\nquartobot init\ngit add . && git commit -m \"Adopt the quartobot citation pipeline\"\ngit push\nquartobot init wires the quartobot resolve pre-render hook into _quarto.yml, declares references.bib + references.resolved.bib under bibliography:, and seeds an empty references.bib. Three files, idempotent — run it again and nothing breaks. For the GitHub Actions render workflow + version banner, follow up with quartobot use github-ci.\n\n\n\nuv tool install quartobot\nThen in your _quarto.yml:\nproject:\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nAnd in your prose:\nThe pattern is described in @doi:10.1371/journal.pcbi.1007128.\nThat’s the minimum. No filter, no quarto add, no extension. The hook runs before pandoc on every render; pandoc-citeproc reads references.resolved.bib and references.bib together.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Choose a path in"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#what-you-get",
+    "href": "getting-started.html#what-you-get",
+    "title": "Getting started",
+    "section": "What you get",
+    "text": "What you get\nThe CLI ships with a small set of subcommands; the rest is what they scaffold.\n\nquartobot resolve — the citation resolver. Reads persistent-identifier cite keys (@doi:, @pmid:, @arxiv:, @isbn:, @url:, @wikidata:, @pmc:) and writes BibLaTeX (references.resolved.bib) plus a CSL JSON cache (references.json). Runs as a Quarto pre-render: hook on every render, or via --output - for one-shot stdout lookups. See resolve a single citation.\nquartobot init — scaffolds the citation pipeline into an existing Quarto project. Three files only: the _quarto.yml snippet (manual-merge if the file exists), references.bib seed, .gitignore lines for Quarto outputs and the regenerated bibliography files.\nquartobot use github-ci — opt-in layer. Adds .github/workflows/render.yml (calls the upstream reusable workflow), a PR-preview cleanup workflow, and the version-banner Quarto include. Skip if you have CI or use quarto publish.\nquartobot mcp — opt-in extra. Starts an MCP stdio server exposing resolve_citation, scan_project, validate_project as read-only tools for Claude Desktop, Codex, Gemini Code Assist. Install with quartobot[mcp]. See the MCP server page.\nquartobot scan / quartobot validate — pre-flight utilities. scan lists every cite key the project mentions; validate runs static checks against _quarto.yml. See validate a manuscript.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Choose a path in"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#prerequisites",
+    "href": "getting-started.html#prerequisites",
+    "title": "Getting started",
+    "section": "Prerequisites",
+    "text": "Prerequisites\n\nQuarto ≥ 1.4 — quarto --version. Install.\nPython ≥ 3.10 — for the quartobot CLI. uv tool install handles this for you if you don’t have Python.\nA GitHub repo — for the CI / Pages parts. The pre-render hook works without a GitHub repo or CI; first render needs network for Crossref/PubMed/etc., subsequent renders skip the network call when the CSL JSON cache already has the entry.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Choose a path in"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#see-also",
+    "href": "getting-started.html#see-also",
+    "title": "Getting started",
+    "section": "See also",
+    "text": "See also\n\nFirst manuscript (15 min) — the same flow as a guided end-to-end walk-through if you’d rather follow one path than pick between three.\nInstall reference — every install method, when to use which.\nCLI reference — including the quartobot resolve pre-render hook.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Choose a path in"
+    ]
+  },
+  {
+    "objectID": "install.html",
+    "href": "install.html",
+    "title": "Install",
+    "section": "",
+    "text": "A few ways to get quartobot on your machine, in roughly descending order of how often you’ll want each.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#recommended-uv-tool-install-from-pypi",
+    "href": "install.html#recommended-uv-tool-install-from-pypi",
+    "title": "Install",
+    "section": "Recommended: uv tool install from PyPI",
+    "text": "Recommended: uv tool install from PyPI\n\nDon’t have uv yet? See the uv installation guide.\n\nuv tool install quartobot\nFor unreleased main, install from git instead:\nuv tool install git+https://github.com/seandavi/quartobot\nThis puts quartobot on your user PATH (typically ~/.local/bin or similar) so commands like quartobot init, scan, validate, and resolve work from any project directory without a venv activation dance.\nuv manages the underlying Python and dependencies in an isolated environment behind the scenes. You don’t need to maintain a virtualenv yourself.\nPin a specific ref:\nuv tool install git+https://github.com/seandavi/quartobot@&lt;branch-or-tag-or-sha&gt;\nUpgrade later:\nuv tool upgrade quartobot\nUninstall:\nuv tool uninstall quartobot",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#if-you-have-pipx-instead-of-uv",
+    "href": "install.html#if-you-have-pipx-instead-of-uv",
+    "title": "Install",
+    "section": "If you have pipx instead of uv",
+    "text": "If you have pipx instead of uv\nIf pipx is already part of your Python workflow and you’d rather not take on the uv toolchain, pipx installs quartobot as a CLI on your user PATH the same way:\npipx install git+https://github.com/seandavi/quartobot\nThe trade-off: pipx doesn’t manage the underlying Python install, so Python ≥ 3.10 needs to be on the system already. quartobot init, scan, validate, and resolve then work the same as the uv tool install path.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#one-shot-uvx",
+    "href": "install.html#one-shot-uvx",
+    "title": "Install",
+    "section": "One-shot: uvx",
+    "text": "One-shot: uvx\nRun quartobot without installing it persistently. Useful for trying it out, scripted one-off jobs, or pinning a specific version in CI without polluting the host install.\nuvx --from git+https://github.com/seandavi/quartobot quartobot --help\nuvx --from git+https://github.com/seandavi/quartobot quartobot resolve --from-scan .\nThe --from flag is required because the package name and the command name are the same. Without it, uvx would look for a PyPI package literally named quartobot.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#pip-install-from-pypi",
+    "href": "install.html#pip-install-from-pypi",
+    "title": "Install",
+    "section": "pip install from PyPI",
+    "text": "pip install from PyPI\nquartobot is on PyPI since v0.2.0, so the registry path works too:\npip install quartobot\nThe trade-off: pip install into a system Python isn’t recommended on modern Linux distros (you’ll likely hit PEP 668 “externally-managed-environment” errors). Use uv tool install quartobot instead, or pipx install quartobot, or install into a project venv with uv pip install quartobot.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#for-repo-development",
+    "href": "install.html#for-repo-development",
+    "title": "Install",
+    "section": "For repo development",
+    "text": "For repo development\nClone and install editable:\ngit clone https://github.com/seandavi/quartobot.git\ncd quartobot\nuv pip install -e .\nFor the full dev environment (lint, type-check, test):\nuv sync --extra dev\nuv run pytest\nuv run ruff check src tests\nuv run mypy",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#requirements",
+    "href": "install.html#requirements",
+    "title": "Install",
+    "section": "Requirements",
+    "text": "Requirements\n\nPython ≥ 3.10. uv tool install manages this automatically.\nQuarto ≥ 1.4 if you’re rendering documents. Install Quarto.\nNo system manubot install needed. quartobot declares manubot as a dependency; uv tool install brings it along.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "install.html#verify-quarto-can-find-it",
+    "href": "install.html#verify-quarto-can-find-it",
+    "title": "Install",
+    "section": "Verify Quarto can find it",
+    "text": "Verify Quarto can find it\nThe quartobot resolve pre-render hook in _quarto.yml runs as a subprocess of quarto render, which means quartobot has to be on the shell PATH Quarto sees — not just on the venv-activated PATH in your terminal. uv tool install puts it there; an editable install into a project venv does not.\nquartobot --version\nquartobot --help\nquarto check\nwhich quartobot\nIf quartobot --version works in your shell but quarto render fails with “command not found: quartobot”, the install directory (typically ~/.local/bin) isn’t on the shell PATH for the user Quarto runs as. For uv tool install, uv tool update-shell adds it; for pipx, pipx ensurepath does the same. A login reload then picks it up.",
+    "crumbs": [
+      "Install"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html",
+    "href": "mcp-claude-desktop.html",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "",
+    "text": "By the end of this tutorial, Claude Desktop will be able to resolve any cite key you ask about against quartobot’s resolver — and proactively ground citations as it drafts. The eight years of source-API handling manubot has accumulated land in the agent’s toolkit as one MCP tool call.\nIf you have never used MCP before, that’s fine. MCP (the Model Context Protocol) is just a way for desktop AI clients to call out to small local programs. You wire one config snippet, restart Claude Desktop, and the tools show up. No accounts, no servers, no ports.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#before-you-start",
+    "href": "mcp-claude-desktop.html#before-you-start",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "Before you start",
+    "text": "Before you start\nYou need:\n\nquartobot[mcp] installed — uv tool install 'quartobot[mcp]'. The [mcp] extra ships the MCP SDK alongside the CLI; a plain uv tool install quartobot doesn’t pull it. Available from PyPI as of v0.2.0.\nClaude Desktop — download here if you don’t have it. Free tier is fine.\nOptional but recommended: an existing quartobot manuscript, scaffolded per the first-manuscript tutorial. The tutorial works fine without one if you just want to see the resolver in action — the last two steps assume one.\n\nThat’s it. No separate Python install, no API keys to wire, no filter to register with Quarto.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#verify-the-mcp-server-runs",
+    "href": "mcp-claude-desktop.html#verify-the-mcp-server-runs",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "1. Verify the MCP server runs",
+    "text": "1. Verify the MCP server runs\nThe server itself starts on stdio. There’s nothing to launch manually — Claude Desktop will spawn the process for you the moment you wire the config. But before that, confirm the subcommand exists:\nquartobot mcp --help\nYou should see a short help text describing the mcp subcommand. If you get Error: No such command 'mcp', your install was the base quartobot rather than quartobot[mcp]. Re-run the install with the extra:\nuv tool install --force 'quartobot[mcp]'",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#wire-claude-desktop",
+    "href": "mcp-claude-desktop.html#wire-claude-desktop",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "2. Wire Claude Desktop",
+    "text": "2. Wire Claude Desktop\nClaude Desktop reads its MCP server list from a single JSON file. The path depends on your OS:\n\nmacOS: ~/Library/Application Support/Claude/claude_desktop_config.json\nWindows: %APPDATA%\\Claude\\claude_desktop_config.json\n\nThe rest of this tutorial assumes macOS paths. The Windows path behaves identically.\nIf the file doesn’t exist yet, create it. If it exists with other MCP servers already configured, merge the quartobot entry into the existing mcpServers block — don’t replace the whole file.\nThe snippet to add:\n{\n  \"mcpServers\": {\n    \"quartobot\": {\n      \"command\": \"quartobot\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\ncommand is the binary name; uv tool install puts quartobot on your user PATH, so Claude Desktop will find it. args is the subcommand list passed to that binary.\nQuit Claude Desktop fully (Cmd-Q on macOS — closing the window isn’t enough) and reopen it.\nLook for the MCP tool indicator near the chat input — a small wrench/tool icon at the bottom of the message box. Click it. You should see quartobot listed with three tools:\n\nresolve_citation\nscan_project\nvalidate_project\n\nIf you don’t see the icon at all, your config file has a JSON parse error. The most common cause is a missing comma when merging into an existing mcpServers block. Fix the JSON, restart Claude Desktop, try again.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#ask-claude-to-resolve-one-citation",
+    "href": "mcp-claude-desktop.html#ask-claude-to-resolve-one-citation",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "3. Ask Claude to resolve one citation",
+    "text": "3. Ask Claude to resolve one citation\nStart a new conversation. Paste this prompt:\n\nUse the quartobot tools to resolve doi:10.21105/joss.01686. What’s the paper’s title and first author?\n\nWhat you’ll see, in order:\n\nClaude announces it’s calling the resolve_citation tool. The Claude Desktop UI shows a tool-call card; click it to expand and you’ll see the arguments (cite_key: \"doi:10.21105/joss.01686\").\nThe tool returns CSL JSON — a structured record with title, author, issued, container-title, and so on.\nClaude reads the CSL JSON and replies with the title and first author extracted from it.\n\nThe answer should be: “Welcome to the Tidyverse”, first author Hadley Wickham. That’s the metadata your manuscript renderer would have produced for the same key — the agent is reading from the same manubot.cite.citekey_to_csl_item call the pre-render hook makes. No guessing, no training-data recall, no hallucinated DOIs.\nIf you’ve never seen an MCP tool call before, this is the whole trick: the agent isn’t answering from its head. It’s calling out to a local function, reading the structured response, and summarizing it.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#draft-a-paragraph-with-grounded-citations",
+    "href": "mcp-claude-desktop.html#draft-a-paragraph-with-grounded-citations",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "4. Draft a paragraph with grounded citations",
+    "text": "4. Draft a paragraph with grounded citations\nNow the headline use case. New conversation:\n\nDraft a one-paragraph introduction for a paper on reproducible data analysis in R. Cite Wickham et al.’s ‘Welcome to the Tidyverse’ (doi:10.21105/joss.01686) and one other relevant paper of your choice. Use the quartobot resolve_citation tool to verify each DOI before including it.\n\nWatch the trace. Claude will:\n\nPropose two candidate citations — the tidyverse paper plus one it picks (often a data-science methods paper, a Quarto/literate- programming reference, or a domain-specific dataset).\nCall resolve_citation on each proposed DOI. The tool either returns CSL JSON or an error dict.\nDrop any citation that errored out. Commit only to the keys that resolved.\nWrite the paragraph, using @doi:... cite-key syntax.\n\nThe output is a paragraph you can paste verbatim into your manuscript. Something like:\nReproducible data analysis in R has matured around the tidyverse\necosystem [@doi:10.21105/joss.01686], a coherent grammar for\ndata manipulation, visualization, and modeling that spans a\nfamily of packages and composes cleanly into pipeline-style\nworkflows. Pairing this with literate-document tools that\ninterleave analysis code, prose, and citations in a single\nsource file rendered to HTML, PDF, or DOCX\n[@doi:10.7717/peerj.4375] lets the analysis travel with the\nnarrative.\nThe exact wording will vary; the cite keys are what matter. Both DOIs in the example above resolve cleanly through quartobot.\nIf Claude proposes a DOI and resolve_citation returns an error, ask it to try a different paper. The point is that you see the verification happen — the agent can’t slip an unverified key into the final paragraph without you watching it bypass the tool.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#paste-into-your-manuscript-and-render",
+    "href": "mcp-claude-desktop.html#paste-into-your-manuscript-and-render",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "5. Paste into your manuscript and render",
+    "text": "5. Paste into your manuscript and render\nCopy the paragraph Claude produced. Open index.qmd in the manuscript you scaffolded earlier (or any quartobot project) and paste it in. Save.\nquarto render\nThe pre-render hook fires, scans index.qmd, sees the two @doi:... keys, resolves them, and writes references.resolved.bib. Pandoc-citeproc reads references.resolved.bib and formats the citations in the rendered HTML and PDF.\nOpen _output/index.html. The cite keys you pasted now show as formatted references, author names and all. The references list at the bottom of the document has both entries.\nThe metadata in the rendered manuscript matches the metadata Claude showed you in the tool-call trace, because it’s the same manubot.cite.citekey_to_csl_item call underneath both. No drift between what the agent saw and what the renderer wrote.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#what-you-have",
+    "href": "mcp-claude-desktop.html#what-you-have",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "What you have",
+    "text": "What you have\n\nCitation grounding for any DOI, PMID, arXiv, ISBN, URL, Wikidata, or PMC key the agent encounters. The same seven prefixes manubot has supported for years.\nAn agent that uses the same resolver the manuscript renderer does. No metadata drift between draft and render.\nNo filter, no quarto add, no Quarto extension to install — just quartobot[mcp] and a four-line Claude Desktop config snippet.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "mcp-claude-desktop.html#see-also",
+    "href": "mcp-claude-desktop.html#see-also",
+    "title": "Tutorial: drafting with Claude Desktop",
+    "section": "See also",
+    "text": "See also\n\nMCP server reference — the scan_project and validate_project tools you didn’t use here, setup snippets for Codex and Gemini Code Assist, and the explicit scope-out list (no write tools, no HTTP transport).\nFirst manuscript tutorial — if you want the rendering and CI half too.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "MCP + Claude Desktop"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html",
+    "href": "migrating-from-manubot.html",
+    "title": "Migrating from manubot",
+    "section": "",
+    "text": "If you have an existing manubot manuscript built on rootstock and you want to move it to quartobot, here’s the translation. The pattern is preserved — prose source in git, auto-resolved citations, per-commit permalinks, PR-reviewed prose. What you change is the build pipeline and a few filename conventions.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#before-you-start",
+    "href": "migrating-from-manubot.html#before-you-start",
+    "title": "Migrating from manubot",
+    "section": "Before you start",
+    "text": "Before you start\n\nDon’t delete anything. Migrate on a branch (or a separate worktree); keep the manubot setup intact until the new one renders correctly.\nDecide the project shape. Most manubot manuscripts map cleanly onto Quarto’s manuscript template (single paper.qmd plus references). Longer works — theses, reviews, books in progress — map better onto the book template (chapter-per-file). Pick one; you can switch later, the file shape is the only thing that changes.\nWhat carries over unchanged: your prose, your cite keys, your hand-curated references, your figures. What changes: the build pipeline, the metadata file’s shape, the directory layout.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-1-install-the-quartobot-cli",
+    "href": "migrating-from-manubot.html#step-1-install-the-quartobot-cli",
+    "title": "Migrating from manubot",
+    "section": "Step 1 — Install the quartobot CLI",
+    "text": "Step 1 — Install the quartobot CLI\nuv tool install git+https://github.com/seandavi/quartobot\nquartobot --version\nPuts quartobot on your user PATH (~/.local/bin/ typically). Quarto’s pre-render subprocess needs to find it there. See Install for uvx, editable, and post-v0.1-tag pip install paths.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-2-scaffold-the-quarto-project",
+    "href": "migrating-from-manubot.html#step-2-scaffold-the-quarto-project",
+    "title": "Migrating from manubot",
+    "section": "Step 2 — Scaffold the Quarto project",
+    "text": "Step 2 — Scaffold the Quarto project\nIn the same repo, alongside your existing content/, build/, and ci/ directories:\nquartobot init\ninit writes:\n\n_quarto.yml with the pre-render hook wired to quartobot resolve\nreferences.bib (seed for hand-curated entries — empty)\n_version-banner.html.template + _version-banner.html (dev placeholder)\n.github/workflows/render.yml (ten-line caller of the upstream reusable workflow)\n.github/workflows/pr-closed.yml (preview teardown)\n.gitignore augments\n\nFor a book project, pass --project-type book — same files, plus chapters/ is where your content lives.\nquartobot init --project-type book",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-3-move-your-content",
+    "href": "migrating-from-manubot.html#step-3-move-your-content",
+    "title": "Migrating from manubot",
+    "section": "Step 3 — Move your content",
+    "text": "Step 3 — Move your content\n\nManuscript shape (single document)\nManubot’s content/01-abstract.md, 02-introduction.md, … get concatenated at build into one manuscript. Quarto’s manuscript template uses one paper.qmd (or whatever you name it) for the same thing. The mechanical translation:\n# Order matters — match manubot's numeric prefix order.\ncat content/*.md &gt; paper.qmd\nThen move the YAML front-matter from content/metadata.yaml into the top of paper.qmd between --- fences (see Step 4).\nThe .md/.qmd syntax overlap is high enough that prose usually needs no edits. Things to spot-check after the concat:\n\nHeading levels. Manubot expects # for the document title and ## for top-level sections; Quarto’s manuscript template treats the YAML title: field as the title and uses # for top-level sections. Drop the first # Title line and let Quarto render the title from the YAML.\nCite keys. No change — @doi:, @pmid:, @arxiv:, @isbn: etc. all work identically. Bare DOIs (@10.1371/…) also work.\nFigure references. Manubot uses ![](images/foo.png); Quarto adds named cross-references via {#fig-foo}. If you want auto-numbered figure cross-references, add the ID; if your prose says “Figure 3” by hand, no change needed.\nMath. Both use $…$ and $$…$$. No change.\n\n\n\nBook shape (chapter-per-file)\nRename your manubot content files into chapters/:\nmkdir -p chapters\nfor f in content/[0-9]*.md; do\n  base=$(basename \"$f\" .md)\n  # Drop the leading \"01-\" / \"02-\" prefix if you want clean URLs;\n  # keep it if you want to preserve manubot's filenames.\n  cp \"$f\" \"chapters/${base#[0-9]*-}.qmd\"\ndone\nEdit _quarto.yml to list the chapters in order under book.chapters:. Move metadata.yaml content into the book: block in _quarto.yml (see Step 4).",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-4-move-your-metadata",
+    "href": "migrating-from-manubot.html#step-4-move-your-metadata",
+    "title": "Migrating from manubot",
+    "section": "Step 4 — Move your metadata",
+    "text": "Step 4 — Move your metadata\nManubot’s content/metadata.yaml looks like:\ntitle: My manuscript title\nkeywords:\n  - reproducibility\nauthors:\n  - github: alice\n    name: Alice Author\n    initials: AA\n    orcid: 0000-0000-0000-0000\n    email: alice@example.org\n    corresponding: true\n    affiliations:\n      - Department of Examples, University of Demonstration\nQuarto’s equivalent goes either in the file’s YAML front-matter (for the manuscript shape) or under book: in _quarto.yml (for the book shape). The field names mostly map:\ntitle: \"My manuscript title\"\nkeywords:\n  - reproducibility\nauthor:\n  - name: Alice Author\n    affiliation: Department of Examples, University of Demonstration\n    orcid: 0000-0000-0000-0000\n    email: alice@example.org\n    corresponding: true\nDifferences worth flagging:\n\nauthors: → author: (singular key, still takes a list — Quarto’s convention).\ngithub: and initials: don’t have direct equivalents. Quarto doesn’t render them; if you want them on the manuscript, add them in an author block extension or drop them. Manubot uses these for contribution attribution in the rendered author block — see Quarto’s attribution: field for a similar surface.\naffiliations: (list per author in manubot) → affiliation: (string, singular) for the simple case, or affiliations: (list of refs into a top-level affiliations: block) for multiple affiliations per author. Quarto’s affiliation reference shape is documented at quarto.org/docs/journals/authors.html.\nfunders: / acknowledgments: go in the front-matter the same way manubot puts them in metadata; Quarto reads them per the journal template you’re targeting.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-5-move-your-hand-curated-references",
+    "href": "migrating-from-manubot.html#step-5-move-your-hand-curated-references",
+    "title": "Migrating from manubot",
+    "section": "Step 5 — Move your hand-curated references",
+    "text": "Step 5 — Move your hand-curated references\nManubot’s content/manual-references.json (CSL JSON) or content/manual-references.yaml (CSL YAML) or content/manual-references.bib all map onto references.bib (BibTeX) or stay as their original format — pandoc citeproc reads .bib, .json (CSL JSON), and .yaml (CSL YAML) interchangeably.\nThe simplest move:\n# If you had a .bib already, just copy it.\ncp content/manual-references.bib references.bib\nOr convert CSL JSON to BibTeX with pandoc-citeproc:\npandoc -f csljson -t biblatex content/manual-references.json -o references.bib\nThen make sure _quarto.yml lists it under bibliography:. The template quartobot init writes already does:\nbibliography:\n  - references.bib    # hand-curated\n  - references.resolved.bib   # auto-resolved by `quartobot resolve`\nIf you had manual-references.json populated by manubot’s resolver runs (not hand-curated), discard it. The pre-render hook regenerates the auto-resolved references.json on next render from the cite keys in your prose.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-6-swap-the-ci-pipeline",
+    "href": "migrating-from-manubot.html#step-6-swap-the-ci-pipeline",
+    "title": "Migrating from manubot",
+    "section": "Step 6 — Swap the CI pipeline",
+    "text": "Step 6 — Swap the CI pipeline\nDelete build/ and the manubot CI workflow:\ngit rm -r build/\ngit rm ci/build.yaml 2&gt;/dev/null  # or wherever your manubot workflow lives\ngit rm .github/workflows/manubot.yaml 2&gt;/dev/null\nquartobot init already wrote .github/workflows/render.yml — a ten-line caller of the upstream reusable workflow. That workflow handles render → permalink staging → gh-pages deploy → sticky PR comment, the same surface manubot’s build/build.sh + build/webpage.sh covered.\nThe deployed URL layout is preserved: https://&lt;owner&gt;.github.io/&lt;repo&gt;/v/&lt;sha&gt;/ for per-commit snapshots, https://&lt;owner&gt;.github.io/&lt;repo&gt;/ for latest main, https://&lt;owner&gt;.github.io/&lt;repo&gt;/pr/&lt;n&gt;/ for open PR previews. Existing links into your manuscript’s snapshot URLs keep working.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-7-local-test",
+    "href": "migrating-from-manubot.html#step-7-local-test",
+    "title": "Migrating from manubot",
+    "section": "Step 7 — Local test",
+    "text": "Step 7 — Local test\nquarto render\nThe pre-render hook runs quartobot resolve first, writes references.json. Then pandoc renders the document; citeproc reads both bibliographies. Open index.html (manuscript) or _book/index.html (book) and check that:\n\nEvery @doi: / @pmid: / @arxiv: cite resolved (no [Unresolved citation: …] markers).\nHand-curated cites from references.bib rendered.\nFigures show up.\nThe version banner is the dev placeholder (gets replaced by CI on push to main).\n\nquartobot validate . runs the same checks the CI lint step does:\nquartobot validate .\nExpect 5 checks; failures usually mean the pre-render line in _quarto.yml is malformed or references.json isn’t in the bibliography: list.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#step-8-push",
+    "href": "migrating-from-manubot.html#step-8-push",
+    "title": "Migrating from manubot",
+    "section": "Step 8 — Push",
+    "text": "Step 8 — Push\ngit add .\ngit commit -m \"Migrate to quartobot\"\ngit push\nCI takes it from there. On first push to main, enable GitHub Pages in Settings → Pages → Source: GitHub Actions (or “Deploy from a branch → gh-pages” depending on which reusable workflow path you’re on). If the manubot setup was already deploying to gh-pages with the same /v/&lt;sha&gt;/ layout, the deploy slots in without breaking existing snapshot URLs.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#what-to-delete-after-the-dust-settles",
+    "href": "migrating-from-manubot.html#what-to-delete-after-the-dust-settles",
+    "title": "Migrating from manubot",
+    "section": "What to delete after the dust settles",
+    "text": "What to delete after the dust settles\nOnce the new pipeline has rendered cleanly on main:\n\ncontent/ directory\nbuild/ directory\nci/ directory (if manubot-specific)\nOld manubot workflow files\nAny webpage/ source-controlled checkout (the gh-pages branch is managed by CI now)\n\nKeep the gh-pages branch intact — it has your historical snapshots at /v/&lt;old-sha&gt;/, and the new pipeline writes new ones alongside.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "migrating-from-manubot.html#see-also",
+    "href": "migrating-from-manubot.html#see-also",
+    "title": "Migrating from manubot",
+    "section": "See also",
+    "text": "See also\n\nDifferences from manubot — what carries over and what changes\nGetting started — for the abridged fresh-project version\nCLI reference — init, scan, validate, resolve, mcp",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Migrate from manubot"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html",
+    "href": "quarto-websites.html",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "",
+    "text": "quartobot’s pre-render hook works on every Quarto project type, but the documentation so far has been manuscript-shaped. Websites change three things worth covering on their own page: one references.json shared across all pages, format.html.bibliography: resolves relative to each page, and the _freeze/ cache interacts with cite-key changes in unobvious ways. The rest is the same.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html#minimal-wiring",
+    "href": "quarto-websites.html#minimal-wiring",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "Minimal wiring",
+    "text": "Minimal wiring\nQuarto’s own scaffolder writes the website layout:\nquarto create project website my-site\ncd my-site\nLayer the citation pipeline on top:\nquartobot init\nSame UX as the manuscript path. Because quarto create project already wrote a _quarto.yml, init will not touch it; it prints a YAML snippet to paste in yourself. Merge the snippet under the existing project: block. The resulting _quarto.yml looks like:\nproject:\n  type: website\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nwebsite:\n  title: \"My site\"\n  navbar:\n    - href: index.qmd\n      text: Home\n    - href: about.qmd\n      text: About\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\ninit also seeds an empty references.bib for hand-curated entries (anything without a persistent identifier — a personal communication, a webpage with no DOI) and adds _freeze/, .quarto/, *_files/, and references.json to .gitignore.\nThat’s the wiring. Every quarto render and quarto preview now runs quartobot resolve first; pandoc-citeproc reads the resulting references.json alongside references.bib.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html#per-page-citation-lists",
+    "href": "quarto-websites.html#per-page-citation-lists",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "Per-page citation lists",
+    "text": "Per-page citation lists\nA website is multiple pages. Some cite, some don’t. The pre-render hook does not care: quartobot scan walks the whole project, quartobot resolve resolves every cite key it finds across every page into one shared references.json at the project root. The bibliography is one file, not one per page.\nEach page’s rendered HTML carries only the references actually cited on that page. That’s pandoc-citeproc’s default — it filters the bibliography down to the keys cited in the document. A page that cites nothing renders with no reference list at all. A page that cites three keys renders with three entries, even though references.json holds dozens.\nIf you need an entry to appear in a page’s bibliography list without an inline citation — a “further reading” section, say — pandoc’s nocite: field in the page frontmatter forces it in:\n---\ntitle: \"About\"\nnocite: |\n  @doi:10.1371/journal.pcbi.1007128\n---\nThat is pandoc behavior, not quartobot’s, and it’s documented in the pandoc manual under “Including uncited items in the bibliography.”",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html#freeze-cache-and-cite-key-changes",
+    "href": "quarto-websites.html#freeze-cache-and-cite-key-changes",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "Freeze cache and cite-key changes",
+    "text": "Freeze cache and cite-key changes\nQuarto’s _freeze/ directory caches rendered output per page so that quarto render skips pages whose source hasn’t changed. The interaction with the pre-render hook has one gotcha worth knowing.\nWhen you change a cite key inside a .qmd page, _freeze/ invalidates that page (its source hash changed) but does not invalidate references.json. The pre-render hook runs on every render anyway, so the new key gets resolved and the bibliography updates correctly. This works the way you’d want.\nThe case that bites: you change only _quarto.yml’s bibliography: list — add a second .bib file, say. No .qmd source hash changes, so _freeze/ thinks nothing needs re-rendering, and the new bibliography entries never reach the rendered HTML. Run quarto render --no-freeze once to bust the cache. After that, normal quarto render picks up the new bibliography on every page.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html#worked-example",
+    "href": "quarto-websites.html#worked-example",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "Worked example",
+    "text": "Worked example\nA two-page site sharing one bibliography.\nmy-site/\n├── _quarto.yml\n├── index.qmd\n├── methods.qmd\n├── references.bib\n└── references.resolved.bib   # generated by quartobot resolve\n_quarto.yml:\nproject:\n  type: website\n  pre-render: quartobot resolve --from-scan . --id-mode citation-key\n\nwebsite:\n  title: \"Lab notebook\"\n  navbar:\n    - href: index.qmd\n      text: Home\n    - href: methods.qmd\n      text: Methods\n\nbibliography:\n  - references.bib\n  - references.resolved.bib\nindex.qmd:\n---\ntitle: \"Home\"\n---\n\nThe manubot pattern [@doi:10.1371/journal.pcbi.1007128] runs scholarly\nwriting as software.\nmethods.qmd:\n---\ntitle: \"Methods\"\n---\n\nGTEx Consortium pilot data [@pmid:23715323] is the worked example.\nRender:\nquarto render\nThe pre-render hook scans both pages, resolves both keys (one via Crossref, one via PubMed), and writes references.resolved.bib with both entries. Pandoc-citeproc reads references.bib + references.json per page and emits one reference list per page: index.html carries the manubot citation, methods.html carries the GTEx citation, neither carries the other’s. A third page citing both keys would carry both entries; a fourth citing neither would carry no reference list at all. That’s pandoc-citeproc’s default, not quartobot’s.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "quarto-websites.html#see-also",
+    "href": "quarto-websites.html#see-also",
+    "title": "How to use quartobot in a Quarto website",
+    "section": "See also",
+    "text": "See also\n\nFirst manuscript tutorial — the same pattern, single-page project.\nCLI reference: resolve — full flag surface for the pre-render command.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Use a Quarto website"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html",
+    "href": "shell-tool-agent.html",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "",
+    "text": "The MCP path covers authoring clients that natively speak MCP — Claude Desktop, Codex, Gemini Code Assist, Cursor. The other half of the agentic-authoring world is harnesses without MCP support, where the agent has a bash or run_command tool and reaches the resolver by shelling out. This tutorial walks that path.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#whats-different-from-the-mcp-path",
+    "href": "shell-tool-agent.html#whats-different-from-the-mcp-path",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "What’s different from the MCP path",
+    "text": "What’s different from the MCP path\nThe same manubot.cite.citekey_to_csl_item sits underneath both. MCP gives the agent a typed tool call; the shell path is the same call wrapped in quartobot resolve --output - | jq. Pick by where your agent lives.\nIf you’re using Claude Desktop, the MCP path is simpler — see the MCP + Claude Desktop tutorial. If you’re using a harness with shell access and no MCP support, this is the path.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#before-you-start",
+    "href": "shell-tool-agent.html#before-you-start",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "Before you start",
+    "text": "Before you start\nYou need:\n\nquartobot installed — uv tool install quartobot. The base install is enough; the [mcp] extra is only for the MCP-server path. Available from PyPI as of v0.2.0.\nAn agent harness with a shell tool — Codex CLI’s bash tool, a custom Anthropic SDK harness with tool use, Cline, an in-house automation script with subprocess access. Anything that lets the agent invoke a shell command and read stdout.\njq — most examples below pipe through it. Not strictly required (the agent can parse CSL JSON directly), but the shell trace reads more cleanly with it.\n\nThat’s it. No MCP SDK, no JSON config files, no Claude Desktop.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#building-blocks",
+    "href": "shell-tool-agent.html#building-blocks",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "Building blocks",
+    "text": "Building blocks\nThree calls the agent will make. Each is a single shell command; output goes to stdout for the agent to read back.\n\nquartobot resolve --output - &lt;key&gt;\nResolves one cite key to stdout. The simplest building block:\nquartobot resolve --output - doi:10.21105/joss.01686 | jq '.[0].title'\n\"Welcome to the Tidyverse\"\nOutput is CSL JSON — an array with one element per resolved key. The human-readable summary line goes to stderr and stays out of the agent’s parsing path. Exit is non-zero if any key fails to resolve, so a set -e or shell-tool error path picks the failure up automatically.\nA slightly fuller pipeline pulling title and first author:\nquartobot resolve --output - doi:10.21105/joss.01686 \\\n  | jq '.[0] | {title, author: .author[0].family}'\n{\n  \"title\": \"Welcome to the Tidyverse\",\n  \"author\": \"Wickham\"\n}\nThe agent reads that back, ties title and author to the prose key, and drops a verified @doi:... into the draft.\n\n\nquartobot resolve --output - --from-scan &lt;path&gt;\nResolves every persistent-identifier cite key in a project tree to stdout in one call. Useful when the agent’s task is “show me everything that’s cited” or “give me the bibliography I’ll be working with”:\nquartobot resolve --output - --from-scan . | jq 'length'\n12\nThe same array shape, just longer. The agent can pipe through jq to filter, group by prefix, or extract titles for a survey reply.\n\n\nquartobot validate &lt;path&gt;\nRuns pre-flight checks on a Quarto project. Non-zero exit on failure. The agent gates “should I commit this?” on it:\nquartobot validate .\n  ✓ _quarto.yml exists\n  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib\n  ✓ pre-render hook — `quartobot resolve` invoked with --id-mode citation-key\n  ✓ resolved bibliography in `bibliography:` — listed under `bibliography:`\n  ✓ no duplicate cite keys — 5 unique key(s) in 3 file(s)\n\n5 of 5 checks passed.\nStatic checks only — no network. The full check list lives in CLI reference: quartobot validate.\nCross-reference: see How to resolve a single citation for the CLI side in isolation. The rest of this tutorial assumes that’s already familiar.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#worked-scenario",
+    "href": "shell-tool-agent.html#worked-scenario",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "Worked scenario",
+    "text": "Worked scenario\nThe premise: the agent receives a draft paragraph from the user with @doi:... and @pmid:... cite keys. The user asks the agent to “verify these citations and report back.”\nThe trace, in pseudocode form — what the agent shells out, what it reads back, what it tells the user:\nuser → \"Verify the citations in this paragraph:\nThe tidyverse [@doi:10.21105/joss.01686] gave R users a coherent\ngrammar for data manipulation. The Genotype-Tissue Expression\nConsortium's pilot analysis [@pmid:23715323] catalogued\ntissue-specific gene expression across hundreds of donors — two\nmodern methods citations the agent should verify against the\nsource registrars before letting them into the draft.\"\n\nagent thinking → \"I'll grep cite keys, resolve each, report findings.\"\n\nagent shells →\n  $ echo \"&lt;paragraph&gt;\" | grep -oE '@(doi|pmid|arxiv|isbn|url|wikidata|pmc):[^][:space:],]+' | sort -u\n  @doi:10.21105/joss.01686\n  @pmid:23715323\n\n  $ quartobot resolve --output - doi:10.21105/joss.01686 \\\n      | jq '.[0] | {title, author: .author[0].family, year: .issued.\"date-parts\"[0][0]}'\n  {\n    \"title\": \"Welcome to the Tidyverse\",\n    \"author\": \"Wickham\",\n    \"year\": 2019\n  }\n\n  $ quartobot resolve --output - pmid:23715323 \\\n      | jq '.[0] | {title, author: .author[0].family, year: .issued.\"date-parts\"[0][0]}'\n  {\n    \"title\": \"The Genotype-Tissue Expression (GTEx) project\",\n    \"author\": \"Lonsdale\",\n    \"year\": 2013\n  }\n\nagent → \"Both citations resolve. doi:10.21105/joss.01686 is\nWickham et al., 'Welcome to the Tidyverse' (Journal of Open\nSource Software, 2019). pmid:23715323 is Lonsdale et al., 'The\nGenotype-Tissue Expression (GTEx) project' (Nature Genetics, 2013).\nBoth check out — the paragraph is ready to drop into your\nmanuscript.\"\nTwo things worth flagging about that trace. The grep regex covers manubot’s full prefix set (doi, pmid, arxiv, isbn, url, wikidata, pmc); anything not matching is a hand-curated references.bib entry that doesn’t need resolving. And the jq filters pull only what the agent needs (title, author, year), keeping the response inside the context budget on long drafts. If a resolve call had returned a non-zero exit, the agent reports the failure and refuses to commit to an unverified key.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#gating-commits-on-validate",
+    "href": "shell-tool-agent.html#gating-commits-on-validate",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "Gating commits on validate",
+    "text": "Gating commits on validate\nA follow-up scenario. The user asks the agent to add a new paragraph to methods.qmd. After writing the edit, the agent runs quartobot validate . before suggesting the commit:\nagent shells →\n  $ quartobot validate .\n  ✓ _quarto.yml exists\n  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib\n  ✓ pre-render hook — `quartobot resolve` invoked with --id-mode citation-key\n  ✓ resolved bibliography in `bibliography:`\n  ✗ no duplicate cite keys — @doi:10.21105/joss.01686 appears in 2 file(s):\n      intro.qmd:14\n      methods.qmd:42\n\n  4 of 5 checks passed. Exit 1.\n  $ echo $?\n  1\n\nagent → \"validate failed: doi:10.21105/joss.01686 now appears\nin both intro.qmd and methods.qmd. Cross-file duplicates fail the\nno-duplicate-cite-keys check and block the CI render — `validate`\nexited non-zero. Want me to reuse the existing intro.qmd citation\nby referring back to that section, or to factor the shared claim\nout?\"\nThe point is structural. The agent doesn’t decide whether the edit is clean; validate decides. The agent just respects the exit code. A non-zero exit means “report the failure to the user; don’t suggest the commit.” A zero exit means the edit clears the pre-flight checks the human reviewer would also be running.\nThis generalizes. Anywhere your harness has a “should I take this action?” decision point, quartobot validate is a cheap pre-condition to check. No network, fast enough to run on every turn.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#wiring-this-into-a-harness",
+    "href": "shell-tool-agent.html#wiring-this-into-a-harness",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "Wiring this into a harness",
+    "text": "Wiring this into a harness\nTwo things to wire:\n\nShell access — the agent needs a tool that can execute quartobot resolve --output - and quartobot validate, and pipe stdout through jq. Most harnesses already have this:\n\nCodex CLI ships a bash tool by default; nothing to add.\nAnthropic SDK custom harnesses use the tool-use API with a bash or run_command tool of your definition. See the Anthropic tool use docs for the schema.\nCline uses a built-in shell-execution capability that’s enabled per-workspace.\nIn-house automation typically already shells out; the quartobot calls slot in alongside whatever else the harness runs.\n\nSystem-prompt guidance — tell the agent to use these as the citation-resolution path. Something like:\n\nWhen the user asks you to verify, resolve, or draft citations, use quartobot resolve --output - &lt;key&gt; | jq to fetch metadata from the project’s resolver rather than relying on your training data. Before suggesting a commit that touches .qmd or references.bib, run quartobot validate . and only proceed on exit 0. Cite-key prefixes the resolver accepts: doi, pmid, arxiv, isbn, url, wikidata, pmc. Hand-curated keys (anything without one of those prefixes) live in references.bib; the resolver skips them.\n\n\nThe exact wording lives in your harness’s system prompt; the canonical docs for that prompt slot are the agent platform’s, not this tutorial’s.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#what-you-have",
+    "href": "shell-tool-agent.html#what-you-have",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "What you have",
+    "text": "What you have\n\nAn agent that grounds citations against the same manubot.cite.citekey_to_csl_item your manuscript renderer uses — no metadata drift between draft and render.\nA pre-flight gate on commits, via quartobot validate, that the agent respects on exit code without needing to reason about the check list.\nOne install (uv tool install quartobot), one binary, no SDK, no MCP config, no per-client wiring.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "shell-tool-agent.html#see-also",
+    "href": "shell-tool-agent.html#see-also",
+    "title": "Tutorial: shell-tool agents grounding citations",
+    "section": "See also",
+    "text": "See also\n\nMCP + Claude Desktop — the same end, via MCP instead of shell.\nHow to resolve a single citation — the CLI building block in isolation.",
+    "crumbs": [
+      "Install",
+      "Tutorials",
+      "Shell-tool agent"
+    ]
+  },
+  {
+    "objectID": "validate-manuscript.html",
+    "href": "validate-manuscript.html",
+    "title": "How to validate a manuscript",
+    "section": "",
+    "text": "quartobot validate .\nRuns a battery of static pre-flight checks against _quarto.yml and the project tree — pure static, no network, fast. Exit 0 if everything passes, 1 if any check fails.\nThat’s the whole command. The rest of this page is what each check means and what to do when one fails.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Validate a manuscript"
+    ]
+  },
+  {
+    "objectID": "validate-manuscript.html#what-each-check-asserts",
+    "href": "validate-manuscript.html#what-each-check-asserts",
+    "title": "How to validate a manuscript",
+    "section": "What each check asserts",
+    "text": "What each check asserts\nThe checks are intentionally narrow. They catch the foot-guns that silently produce broken output — where quarto render succeeds but the rendered document is wrong.\n\n_quarto.yml exists\nAsserts the project root has a _quarto.yml. If it doesn’t, this isn’t a Quarto project and the rest of the checks would be noise. Most common cause: you ran quartobot validate from a parent directory. quartobot validate . wants the project root.\nThis check also fails if the file exists but doesn’t parse as YAML (stray tab, unquoted colon in a title: string, list item indented by one space instead of two). Open the file in an editor with YAML linting and the offending line jumps out.\n\n\nbibliography declared\nAsserts _quarto.yml declares a bibliography: key. Without it, citeproc has nowhere to read CSL entries from and citations don’t render. Most common cause: a new project scaffolded outside quartobot init. Add the key at the top level — init writes references.bib and references.resolved.bib by default.\n\n\npre-render hook\nAsserts project.pre-render invokes quartobot resolve --id-mode citation-key. The flag is load-bearing. Without it, manubot’s canonical short hashes (YuJbg3zO) end up as CSL ids instead of your prose keys (doi:10.1371/...), and pandoc-citeproc silently fails to match any cite. Most common cause: the line was edited by hand and the flag got dropped.\n\n\nresolved bibliography inbibliography:``\nAsserts the pre-render hook’s BibLaTeX output (references.resolved.bib by default) is listed under bibliography:. This is the check that bites everyone at least once. The pre-render hook writes the file regardless; if citeproc isn’t told to read it, the resolved entries don’t reach the rendered document. Most common cause: someone removed references.resolved.bib from bibliography: thinking it was an auto-generated artifact that didn’t belong in config. It is auto-generated, but citeproc still needs to be told where to read it. The legacy v0.3 references.json is also accepted for back-compat with a migration hint in the detail string.\n\n\nno duplicate cite keys\nAsserts no cite key appears in more than one file. Same-key-twice in the same file is the normal academic-writing case and is not flagged. The check is narrow on purpose: cross-file duplication is the pattern chunked content can produce by accident; same-file repetition is intent. Most common cause: you copied a paragraph across chapters and the cite came along with it.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Validate a manuscript"
+    ]
+  },
+  {
+    "objectID": "validate-manuscript.html#worked-failure-cases",
+    "href": "validate-manuscript.html#worked-failure-cases",
+    "title": "How to validate a manuscript",
+    "section": "Worked failure cases",
+    "text": "Worked failure cases\n\nMissing references.resolved.bib in bibliography:\n$ quartobot validate .\n  ✓ _quarto.yml exists\n  ✓ bibliography declared — 1 file(s): references.bib\n  ✓ pre-render hook — `quartobot resolve --id-mode citation-key` declared\n  ✗ resolved bibliography in `bibliography:` — `references.resolved.bib` is not in `bibliography:` (['references.bib']). Citeproc won't read the resolved entries the pre-render hook writes.\n  ✓ no duplicate cite keys — 5 unique key(s) in 1 file(s)\n\n1 of 5 check(s) failed. Exit 1.\nFix it with a one-line edit to _quarto.yml:\nbibliography:\n  - references.bib    # hand-curated\n  - references.resolved.bib   # auto-resolved by `quartobot resolve`\nWhy it matters: pandoc-citeproc reads every file in the bibliography: list and builds one combined database. The pre-render hook writes resolved entries to references.resolved.bib whether or not citeproc reads them. Drop the file from the list and the render succeeds with every @doi: cite landing as [Unresolved citation] — the silent-failure mode this check exists to prevent.\n\n\nCross-file duplicate cite key\n$ quartobot validate .\n  ✓ _quarto.yml exists\n  ✓ bibliography declared — 2 file(s): references.bib, references.resolved.bib\n  ✓ pre-render hook — `quartobot resolve --id-mode citation-key` declared\n  ✓ resolved bibliography in `bibliography:` — `references.resolved.bib` listed in `bibliography:`\n  ✗ no duplicate cite keys — 1 key(s) appear across multiple files (e.g. @doi:10.1371/journal.pone.0123456 (2 files))\n\n1 of 5 check(s) failed. Exit 1.\nThe message names the offending key and the file count. Walk through: if it’s an accident — paragraph copy-pasted across chapters, cite dragged along — pick the chapter that owns the claim and remove the cite from the other. If both chapters legitimately need the cite, move it to one canonical mention and reference the other chapter prose-style (“as discussed in Chapter 3”).\nSame-file repetition (the same @doi: key twice in paper.qmd) is explicitly not a failure. That’s normal academic writing — one source backing two claims in different paragraphs — and the check is deliberately narrow to leave it alone.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Validate a manuscript"
+    ]
+  },
+  {
+    "objectID": "validate-manuscript.html#running-validate-in-pre-commit-ci",
+    "href": "validate-manuscript.html#running-validate-in-pre-commit-ci",
+    "title": "How to validate a manuscript",
+    "section": "Running validate in pre-commit / CI",
+    "text": "Running validate in pre-commit / CI\nAs a git pre-commit hook, in .pre-commit-config.yaml:\nrepos:\n  - repo: local\n    hooks:\n      - id: quartobot-validate\n        name: quartobot validate\n        entry: quartobot validate .\n        language: system\n        pass_filenames: false\nFast enough for every commit — no network, just YAML parsing and a scan of the prose files.\nAs a CI step, the reusable render workflow already runs quartobot validate before render. quartobot use github-ci wires that workflow into your repo, so any validate failure blocks the deploy with nothing else to set up.\nIf you don’t use the render workflow and want validate on its own:\nname: validate\non: [push, pull_request]\njobs:\n  validate:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: astral-sh/setup-uv@v3\n      - run: uv tool install git+https://github.com/seandavi/quartobot\n      - run: quartobot validate .",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Validate a manuscript"
+    ]
+  },
+  {
+    "objectID": "validate-manuscript.html#see-also",
+    "href": "validate-manuscript.html#see-also",
+    "title": "How to validate a manuscript",
+    "section": "See also",
+    "text": "See also\n\nCLI reference: validate — the flag surface and exit codes.\nquartobot use github-ci — wire validate into the render workflow.",
+    "crumbs": [
+      "Install",
+      "How-to guides",
+      "Validate a manuscript"
+    ]
+  }
+]
